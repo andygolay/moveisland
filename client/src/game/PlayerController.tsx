@@ -17,36 +17,36 @@ const BUILDING_ROOF_HEIGHT = 3.2;
 
 const BUILDINGS = [
   // Agora area (scales: 1.2, 0.9, 1.0, 0.85)
-  { x: 8, z: 6, radius: 2.5, scale: 1.2 },
-  { x: -7, z: 8, radius: 2.2, scale: 0.9 },
-  { x: 10, z: -5, radius: 2.5, scale: 1.0 },
-  { x: -9, z: -6, radius: 2.2, scale: 0.85 },
+  { x: 8, z: 6, radius: 2.5, scale: 1.2, walkableRoof: true },
+  { x: -7, z: 8, radius: 2.2, scale: 0.9, walkableRoof: true },
+  { x: 10, z: -5, radius: 2.5, scale: 1.0, walkableRoof: true },
+  { x: -9, z: -6, radius: 2.2, scale: 0.85, walkableRoof: true },
   // Harbor area (scales: 1.1, 0.9, 0.85)
-  { x: LOCATIONS.HARBOR.x + 8, z: LOCATIONS.HARBOR.z - 3, radius: 2.5, scale: 1.1 },
-  { x: LOCATIONS.HARBOR.x - 5, z: LOCATIONS.HARBOR.z + 6, radius: 2.2, scale: 0.9 },
-  { x: LOCATIONS.HARBOR.x + 4, z: LOCATIONS.HARBOR.z + 8, radius: 2.2, scale: 0.85 },
+  { x: LOCATIONS.HARBOR.x + 8, z: LOCATIONS.HARBOR.z - 3, radius: 2.5, scale: 1.1, walkableRoof: true },
+  { x: LOCATIONS.HARBOR.x - 5, z: LOCATIONS.HARBOR.z + 6, radius: 2.2, scale: 0.9, walkableRoof: true },
+  { x: LOCATIONS.HARBOR.x + 4, z: LOCATIONS.HARBOR.z + 8, radius: 2.2, scale: 0.85, walkableRoof: true },
   // Amphitheater area (scales: 1.0, 0.9)
-  { x: LOCATIONS.AMPHITHEATER.x + 7, z: LOCATIONS.AMPHITHEATER.z + 5, radius: 2.5, scale: 1.0 },
-  { x: LOCATIONS.AMPHITHEATER.x - 6, z: LOCATIONS.AMPHITHEATER.z + 8, radius: 2.2, scale: 0.9 },
+  { x: LOCATIONS.AMPHITHEATER.x + 7, z: LOCATIONS.AMPHITHEATER.z + 5, radius: 2.5, scale: 1.0, walkableRoof: true },
+  { x: LOCATIONS.AMPHITHEATER.x - 6, z: LOCATIONS.AMPHITHEATER.z + 8, radius: 2.2, scale: 0.9, walkableRoof: true },
   // Market area (scales: 0.95, 1.0, 0.85)
-  { x: LOCATIONS.MARKET.x + 6, z: LOCATIONS.MARKET.z - 5, radius: 2.3, scale: 0.95 },
-  { x: LOCATIONS.MARKET.x - 5, z: LOCATIONS.MARKET.z + 7, radius: 2.5, scale: 1.0 },
-  { x: LOCATIONS.MARKET.x + 8, z: LOCATIONS.MARKET.z + 4, radius: 2.2, scale: 0.85 },
+  { x: LOCATIONS.MARKET.x + 6, z: LOCATIONS.MARKET.z - 5, radius: 2.3, scale: 0.95, walkableRoof: true },
+  { x: LOCATIONS.MARKET.x - 5, z: LOCATIONS.MARKET.z + 7, radius: 2.5, scale: 1.0, walkableRoof: true },
+  { x: LOCATIONS.MARKET.x + 8, z: LOCATIONS.MARKET.z + 4, radius: 2.2, scale: 0.85, walkableRoof: true },
   // Lighthouse area (scale: 0.9)
-  { x: LOCATIONS.LIGHTHOUSE.x - 6, z: LOCATIONS.LIGHTHOUSE.z + 4, radius: 2.2, scale: 0.9 },
-  // Temple columns - individual columns you can walk between
+  { x: LOCATIONS.LIGHTHOUSE.x - 6, z: LOCATIONS.LIGHTHOUSE.z + 4, radius: 2.2, scale: 0.9, walkableRoof: true },
+  // Temple columns - individual columns you can walk between (no walkable roof)
   // Front row (z = TEMPLE.z - 4)
-  { x: LOCATIONS.TEMPLE.x - 6, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3 },
-  { x: LOCATIONS.TEMPLE.x - 3, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3 },
-  { x: LOCATIONS.TEMPLE.x, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3 },
-  { x: LOCATIONS.TEMPLE.x + 3, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3 },
-  { x: LOCATIONS.TEMPLE.x + 6, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3 },
+  { x: LOCATIONS.TEMPLE.x - 6, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3, walkableRoof: false },
+  { x: LOCATIONS.TEMPLE.x - 3, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3, walkableRoof: false },
+  { x: LOCATIONS.TEMPLE.x, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3, walkableRoof: false },
+  { x: LOCATIONS.TEMPLE.x + 3, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3, walkableRoof: false },
+  { x: LOCATIONS.TEMPLE.x + 6, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3, walkableRoof: false },
   // Back row (z = TEMPLE.z + 4)
-  { x: LOCATIONS.TEMPLE.x - 6, z: LOCATIONS.TEMPLE.z + 4, radius: 0.6, scale: 1.3 },
-  { x: LOCATIONS.TEMPLE.x - 3, z: LOCATIONS.TEMPLE.z + 4, radius: 0.6, scale: 1.3 },
-  { x: LOCATIONS.TEMPLE.x, z: LOCATIONS.TEMPLE.z + 4, radius: 0.6, scale: 1.3 },
-  { x: LOCATIONS.TEMPLE.x + 3, z: LOCATIONS.TEMPLE.z + 4, radius: 0.6, scale: 1.3 },
-  { x: LOCATIONS.TEMPLE.x + 6, z: LOCATIONS.TEMPLE.z + 4, radius: 0.6, scale: 1.3 },
+  { x: LOCATIONS.TEMPLE.x - 6, z: LOCATIONS.TEMPLE.z + 4, radius: 0.6, scale: 1.3, walkableRoof: false },
+  { x: LOCATIONS.TEMPLE.x - 3, z: LOCATIONS.TEMPLE.z + 4, radius: 0.6, scale: 1.3, walkableRoof: false },
+  { x: LOCATIONS.TEMPLE.x, z: LOCATIONS.TEMPLE.z + 4, radius: 0.6, scale: 1.3, walkableRoof: false },
+  { x: LOCATIONS.TEMPLE.x + 3, z: LOCATIONS.TEMPLE.z + 4, radius: 0.6, scale: 1.3, walkableRoof: false },
+  { x: LOCATIONS.TEMPLE.x + 6, z: LOCATIONS.TEMPLE.z + 4, radius: 0.6, scale: 1.3, walkableRoof: false },
 ];
 
 // Calculate actual building top height (terrain + scaled roof)
@@ -97,6 +97,9 @@ function isInsideBuildingCollision(x: number, z: number, y: number, playerRadius
 // Uses visual building size (smaller than collision radius) so you fall at the visual edge
 function getBuildingRoofHeight(x: number, z: number): number {
   for (const building of BUILDINGS) {
+    // Skip columns/objects without walkable roofs
+    if (!building.walkableRoof) continue;
+
     const dx = x - building.x;
     const dz = z - building.z;
     const distance = Math.sqrt(dx * dx + dz * dz);
