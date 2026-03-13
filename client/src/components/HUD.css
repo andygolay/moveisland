@@ -1,0 +1,168 @@
+.hud-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 100;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.hud-container > * {
+  pointer-events: auto;
+}
+
+/* Top Left - Player Info */
+.hud-top-left {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.avatar-preview {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 2px solid #FFD93D;
+  object-fit: cover;
+}
+
+.player-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.player-name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+}
+
+.player-wallet {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: #aaa;
+  font-family: monospace;
+}
+
+/* Top Right - Menu Buttons */
+.hud-top-right {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+}
+
+.hud-button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.hud-button:hover {
+  background: rgba(30, 95, 138, 0.9);
+}
+
+.hud-button.danger:hover {
+  background: rgba(220, 53, 69, 0.9);
+}
+
+/* Bottom Center - Controls */
+.hud-bottom-center {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.controls-hint {
+  display: flex;
+  gap: 24px;
+  padding: 12px 24px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 24px;
+  backdrop-filter: blur(10px);
+}
+
+.controls-hint span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ccc;
+  font-size: 13px;
+}
+
+.controls-hint kbd {
+  display: inline-block;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  color: white;
+}
+
+/* Bottom Left - Location */
+.hud-bottom-left {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+}
+
+.location-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  color: white;
+  font-size: 14px;
+}
+
+.location-icon {
+  font-size: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .controls-hint {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  .player-info {
+    padding: 8px 12px;
+  }
+
+  .avatar-preview {
+    width: 36px;
+    height: 36px;
+  }
+
+  .player-name {
+    font-size: 14px;
+  }
+}

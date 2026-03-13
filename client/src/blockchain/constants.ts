@@ -1,0 +1,30 @@
+// Movement blockchain constants
+export const MOVEMENT_NETWORK = {
+  name: 'Movement Mainnet',
+  rpcUrl: 'https://mainnet.movementnetwork.xyz/v1',
+  indexerUrl: 'https://indexer.mainnet.movementnetwork.xyz/v1/graphql',
+  chainId: 126,
+};
+
+// Supported NFT collections for avatar selection
+export const SUPPORTED_COLLECTIONS = {
+  MOVELADY: '0x5b4227cfd3119e0c8a9652328c9980b338296a0880f73e5ac3f6cdd5d832ac07',
+  MOVEOUSLY: '0xb92ea39b214d23a3bc7a79e4050c6d9b8038b68790176f9dc061d421ae07793f',
+  ARKAI: '0xd8ab57123a313ef456c93a47b70e9f9c9e8ad4f1316a54823340ed26baba3e80',
+  GORILLA_MOVERZ_COMMUNITY: '0x625f987cf0e5529997f1602b53ef8ad99dd8ec3b5f8dfffa31ccf4848bfe119b',
+  GORILLA_MOVERZ_FOUNDERS: '0x6007e7373620c380051a3bc4461f3c892acb005a6d8b555b4f5257d4f9144b24',
+  METAMENKO: '0x2ae508efe021cc70606e50d38751c8d132bb5c1c127f06c6bcb49d45d6f5a817',
+  RUFFLES_COMMUNITY: '0x9fa7a7abe6c4e7bae9cd8305b60f35023319e345a3d9582f760ea85cfda22bf8',
+} as const;
+
+export const COLLECTION_NAMES: Record<string, string> = {
+  [SUPPORTED_COLLECTIONS.MOVELADY]: 'MoveLady',
+  [SUPPORTED_COLLECTIONS.MOVEOUSLY]: 'Moveously',
+  [SUPPORTED_COLLECTIONS.ARKAI]: 'Arkai',
+  [SUPPORTED_COLLECTIONS.GORILLA_MOVERZ_COMMUNITY]: 'Gorilla Moverz Community',
+  [SUPPORTED_COLLECTIONS.GORILLA_MOVERZ_FOUNDERS]: 'Gorilla Moverz Founders',
+  [SUPPORTED_COLLECTIONS.METAMENKO]: 'MetaMenko',
+  [SUPPORTED_COLLECTIONS.RUFFLES_COMMUNITY]: 'RUFFLES Community',
+};
+
+export type SupportedCollection = typeof SUPPORTED_COLLECTIONS[keyof typeof SUPPORTED_COLLECTIONS];

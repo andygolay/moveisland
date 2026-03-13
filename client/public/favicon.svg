@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Water background -->
+  <rect width="32" height="32" fill="#4AA3DF"/>
+
+  <!-- Island/sand -->
+  <ellipse cx="16" cy="24" rx="12" ry="4" fill="#F4D03F"/>
+  <ellipse cx="16" cy="23" rx="10" ry="3" fill="#F7DC6F"/>
+
+  <!-- Palm tree trunk -->
+  <rect x="14" y="10" width="4" height="14" fill="#8B4513"/>
+  <rect x="15" y="10" width="2" height="14" fill="#A0522D"/>
+
+  <!-- Palm leaves -->
+  <ellipse cx="10" cy="8" rx="6" ry="3" fill="#27AE60" transform="rotate(-30 10 8)"/>
+  <ellipse cx="22" cy="8" rx="6" ry="3" fill="#27AE60" transform="rotate(30 22 8)"/>
+  <ellipse cx="16" cy="5" rx="5" ry="3" fill="#2ECC71"/>
+  <ellipse cx="8" cy="11" rx="5" ry="2.5" fill="#229954" transform="rotate(-45 8 11)"/>
+  <ellipse cx="24" cy="11" rx="5" ry="2.5" fill="#229954" transform="rotate(45 24 11)"/>
+
+  <!-- Coconuts -->
+  <circle cx="15" cy="11" r="1.5" fill="#5D4037"/>
+  <circle cx="17" cy="12" r="1.5" fill="#5D4037"/>
+
+  <!-- Sun reflection on water -->
+  <ellipse cx="6" cy="28" rx="2" ry="1" fill="#5DADE2" opacity="0.6"/>
+  <ellipse cx="26" cy="27" rx="3" ry="1" fill="#5DADE2" opacity="0.6"/>
+</svg>

@@ -1,0 +1,282 @@
+.nft-selector-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a3a52 0%, #2d5a7b 50%, #1e4d6b 100%);
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.nft-selector-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  padding: 40px;
+  max-width: 800px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.nft-selector-card h1 {
+  font-size: 32px;
+  font-weight: 800;
+  color: #1E5F8A;
+  margin: 0 0 8px 0;
+  text-align: center;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 16px;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e0e0e0;
+  border-top-color: #1E5F8A;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading p {
+  margin-top: 16px;
+  color: #666;
+}
+
+.error-message {
+  text-align: center;
+  padding: 32px;
+  background: #fff3cd;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.error-message p {
+  color: #856404;
+  margin: 0 0 16px 0;
+}
+
+.demo-button {
+  padding: 12px 24px;
+  border: 2px solid #1E5F8A;
+  border-radius: 8px;
+  background: white;
+  color: #1E5F8A;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.demo-button:hover {
+  background: #1E5F8A;
+  color: white;
+}
+
+.nft-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.nft-card {
+  background: white;
+  border: 3px solid #e0e0e0;
+  border-radius: 16px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nft-card:hover {
+  border-color: #1E5F8A;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(30, 95, 138, 0.2);
+}
+
+.nft-card.selected {
+  border-color: #FFD93D;
+  background: #FFFDE7;
+  box-shadow: 0 0 0 4px rgba(255, 217, 61, 0.3);
+}
+
+.nft-image-container {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f5f5f5;
+  margin-bottom: 8px;
+}
+
+.nft-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nft-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #FFD93D 0%, #FFB800 100%);
+  color: #1E5F8A;
+  font-size: 48px;
+  font-weight: bold;
+}
+
+.nft-info {
+  text-align: center;
+}
+
+.nft-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nft-collection {
+  font-size: 12px;
+  color: #888;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid #eee;
+}
+
+.selected-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #e8f4f8;
+  border-radius: 12px;
+}
+
+.selected-preview img {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.selected-preview .nft-placeholder.large {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  font-size: 24px;
+}
+
+.selected-preview p {
+  margin: 0;
+  font-weight: 600;
+  color: #1E5F8A;
+}
+
+.name-input-section {
+  width: 100%;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.name-input-section label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+}
+
+.name-input-section input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.name-input-section input:focus {
+  outline: none;
+  border-color: #1E5F8A;
+}
+
+.name-input-section input::placeholder {
+  color: #aaa;
+}
+
+.enter-button {
+  width: 100%;
+  max-width: 300px;
+  padding: 16px 32px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #FFD93D 0%, #FFB800 100%);
+  color: #1E5F8A;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.enter-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 217, 61, 0.4);
+}
+
+.enter-button:disabled {
+  background: #e0e0e0;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.back-button {
+  padding: 10px 24px;
+  border: none;
+  background: none;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.back-button:hover {
+  color: #333;
+}
