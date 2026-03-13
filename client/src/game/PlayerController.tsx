@@ -34,8 +34,19 @@ const BUILDINGS = [
   { x: LOCATIONS.MARKET.x + 8, z: LOCATIONS.MARKET.z + 4, radius: 2.2, scale: 0.85 },
   // Lighthouse area (scale: 0.9)
   { x: LOCATIONS.LIGHTHOUSE.x - 6, z: LOCATIONS.LIGHTHOUSE.z + 4, radius: 2.2, scale: 0.9 },
-  // Temple columns (treated as a single large area) - can't jump on temple
-  { x: LOCATIONS.TEMPLE.x, z: LOCATIONS.TEMPLE.z, radius: 8, scale: 4.0 },
+  // Temple columns - individual columns you can walk between
+  // Front row (z = TEMPLE.z - 4)
+  { x: LOCATIONS.TEMPLE.x - 6, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3 },
+  { x: LOCATIONS.TEMPLE.x - 3, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3 },
+  { x: LOCATIONS.TEMPLE.x, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3 },
+  { x: LOCATIONS.TEMPLE.x + 3, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3 },
+  { x: LOCATIONS.TEMPLE.x + 6, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3 },
+  // Back row (z = TEMPLE.z + 4)
+  { x: LOCATIONS.TEMPLE.x - 6, z: LOCATIONS.TEMPLE.z + 4, radius: 0.6, scale: 1.3 },
+  { x: LOCATIONS.TEMPLE.x - 3, z: LOCATIONS.TEMPLE.z + 4, radius: 0.6, scale: 1.3 },
+  { x: LOCATIONS.TEMPLE.x, z: LOCATIONS.TEMPLE.z + 4, radius: 0.6, scale: 1.3 },
+  { x: LOCATIONS.TEMPLE.x + 3, z: LOCATIONS.TEMPLE.z + 4, radius: 0.6, scale: 1.3 },
+  { x: LOCATIONS.TEMPLE.x + 6, z: LOCATIONS.TEMPLE.z + 4, radius: 0.6, scale: 1.3 },
 ];
 
 // Calculate actual building top height (terrain + scaled roof)
