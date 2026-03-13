@@ -3,6 +3,7 @@ import { useGameStore } from './stores/gameStore';
 import { WalletConnect } from './components/WalletConnect';
 import { NFTSelector } from './components/NFTSelector';
 import { HUD } from './components/HUD';
+import { HintOverlay } from './components/HintOverlay';
 import { Scene } from './game/Scene';
 import { MultiplayerManager } from './game/MultiplayerManager';
 import './App.css';
@@ -21,6 +22,7 @@ function GameContent() {
           <MultiplayerManager />
           <Scene />
           <HUD />
+          <HintOverlay />
         </>
       );
     default:

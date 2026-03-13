@@ -47,7 +47,10 @@ function RemotePlayer({ player }: RemotePlayerProps) {
       rotation={[0, player.rotation, 0]}
     >
       {/* Body with animation state */}
-      <AvatarBody isWalking={player.animation === 'walk' || player.animation === 'run'} />
+      <AvatarBody
+        isWalking={player.animation === 'walk' || player.animation === 'run'}
+        isRunning={player.animation === 'run'}
+      />
 
       {/* NFT Billboard */}
       <NFTBillboard imageUrl={player.nftImage} />

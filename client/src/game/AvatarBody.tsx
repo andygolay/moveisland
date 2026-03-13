@@ -5,25 +5,33 @@ import { usePlayerStore } from '../stores/playerStore';
 
 interface AvatarBodyProps {
   isWalking?: boolean; // For remote players, pass animation state directly
+  isRunning?: boolean; // For remote players, pass running state directly
 }
 
-export function AvatarBody({ isWalking }: AvatarBodyProps) {
+export function AvatarBody({ isWalking, isRunning }: AvatarBodyProps) {
   const leftLegRef = useRef<THREE.Group>(null);
   const rightLegRef = useRef<THREE.Group>(null);
 
   const isMovingFromStore = usePlayerStore((state) => state.isMoving);
+  const currentAnimation = usePlayerStore((state) => state.currentAnimation);
+
   // Use prop if provided (for remote players), otherwise use store (for local player)
   const isMoving = isWalking !== undefined ? isWalking : isMovingFromStore;
+  const isRunningNow = isRunning !== undefined ? isRunning : currentAnimation === 'run';
 
   // Animation timing
   const animTime = useRef(0);
 
   useFrame((_, delta) => {
-    animTime.current += delta * 10; // Faster walk cycle
+    // Faster animation speed when running
+    const animSpeed = isRunningNow ? 18 : 10;
+    animTime.current += delta * animSpeed;
 
-    // Walking animation - legs swing
+    // Walking/running animation - legs swing
     if (isMoving) {
-      const swing = Math.sin(animTime.current) * 0.7;
+      // Wider swing when running
+      const swingAmount = isRunningNow ? 0.9 : 0.7;
+      const swing = Math.sin(animTime.current) * swingAmount;
 
       if (leftLegRef.current && rightLegRef.current) {
         leftLegRef.current.rotation.x = swing;
