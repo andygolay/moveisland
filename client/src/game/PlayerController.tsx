@@ -17,23 +17,24 @@ const BUILDING_ROOF_HEIGHT = 3.2;
 
 const BUILDINGS = [
   // Agora area (scales: 1.2, 0.9, 1.0, 0.85)
-  { x: 8, z: 6, radius: 3.0, scale: 1.2, walkableRoof: true },
-  { x: -7, z: 8, radius: 2.6, scale: 0.9, walkableRoof: true },
-  { x: 10, z: -5, radius: 2.8, scale: 1.0, walkableRoof: true },
-  { x: -9, z: -6, radius: 2.5, scale: 0.85, walkableRoof: true },
+  // Collision radius = visual radius (2.0 * scale) + 0.3 buffer
+  { x: 8, z: 6, radius: 2.7, scale: 1.2, walkableRoof: true },
+  { x: -7, z: 8, radius: 2.1, scale: 0.9, walkableRoof: true },
+  { x: 10, z: -5, radius: 2.3, scale: 1.0, walkableRoof: true },
+  { x: -9, z: -6, radius: 2.0, scale: 0.85, walkableRoof: true },
   // Harbor area (scales: 1.1, 0.9, 0.85)
-  { x: LOCATIONS.HARBOR.x + 8, z: LOCATIONS.HARBOR.z - 3, radius: 2.9, scale: 1.1, walkableRoof: true },
-  { x: LOCATIONS.HARBOR.x - 5, z: LOCATIONS.HARBOR.z + 6, radius: 2.6, scale: 0.9, walkableRoof: true },
-  { x: LOCATIONS.HARBOR.x + 4, z: LOCATIONS.HARBOR.z + 8, radius: 2.5, scale: 0.85, walkableRoof: true },
+  { x: LOCATIONS.HARBOR.x + 8, z: LOCATIONS.HARBOR.z - 3, radius: 2.5, scale: 1.1, walkableRoof: true },
+  { x: LOCATIONS.HARBOR.x - 5, z: LOCATIONS.HARBOR.z + 6, radius: 2.1, scale: 0.9, walkableRoof: true },
+  { x: LOCATIONS.HARBOR.x + 4, z: LOCATIONS.HARBOR.z + 8, radius: 2.0, scale: 0.85, walkableRoof: true },
   // Amphitheater area (scales: 1.0, 0.9)
-  { x: LOCATIONS.AMPHITHEATER.x + 7, z: LOCATIONS.AMPHITHEATER.z + 5, radius: 2.8, scale: 1.0, walkableRoof: true },
-  { x: LOCATIONS.AMPHITHEATER.x - 6, z: LOCATIONS.AMPHITHEATER.z + 8, radius: 2.6, scale: 0.9, walkableRoof: true },
+  { x: LOCATIONS.AMPHITHEATER.x + 7, z: LOCATIONS.AMPHITHEATER.z + 5, radius: 2.3, scale: 1.0, walkableRoof: true },
+  { x: LOCATIONS.AMPHITHEATER.x - 6, z: LOCATIONS.AMPHITHEATER.z + 8, radius: 2.1, scale: 0.9, walkableRoof: true },
   // Market area (scales: 0.95, 1.0, 0.85)
-  { x: LOCATIONS.MARKET.x + 6, z: LOCATIONS.MARKET.z - 5, radius: 2.7, scale: 0.95, walkableRoof: true },
-  { x: LOCATIONS.MARKET.x - 5, z: LOCATIONS.MARKET.z + 7, radius: 2.8, scale: 1.0, walkableRoof: true },
-  { x: LOCATIONS.MARKET.x + 8, z: LOCATIONS.MARKET.z + 4, radius: 2.5, scale: 0.85, walkableRoof: true },
+  { x: LOCATIONS.MARKET.x + 6, z: LOCATIONS.MARKET.z - 5, radius: 2.2, scale: 0.95, walkableRoof: true },
+  { x: LOCATIONS.MARKET.x - 5, z: LOCATIONS.MARKET.z + 7, radius: 2.3, scale: 1.0, walkableRoof: true },
+  { x: LOCATIONS.MARKET.x + 8, z: LOCATIONS.MARKET.z + 4, radius: 2.0, scale: 0.85, walkableRoof: true },
   // Lighthouse area (scale: 0.9)
-  { x: LOCATIONS.LIGHTHOUSE.x - 6, z: LOCATIONS.LIGHTHOUSE.z + 4, radius: 2.6, scale: 0.9, walkableRoof: true },
+  { x: LOCATIONS.LIGHTHOUSE.x - 6, z: LOCATIONS.LIGHTHOUSE.z + 4, radius: 2.1, scale: 0.9, walkableRoof: true },
   // Temple columns - individual columns you can walk between (no walkable roof)
   // Front row (z = TEMPLE.z - 4)
   { x: LOCATIONS.TEMPLE.x - 6, z: LOCATIONS.TEMPLE.z - 4, radius: 0.6, scale: 1.3, walkableRoof: false },
@@ -238,9 +239,11 @@ export function PlayerController() {
 
     if (wouldCollide) {
       if (currentlyStuck) {
-        // Player is stuck inside - allow any movement that doesn't make things worse
-        // Find which building(s) we're actually inside
-        let totalEscapeDir = { x: 0, z: 0 };
+        // Player is stuck inside - push them out
+        // Find the closest building we're inside and escape from it
+        let closestBuilding = null;
+        let closestDist = Infinity;
+
         for (const building of BUILDINGS) {
           const buildingTop = getBuildingTopHeight(building);
           if (position.y >= buildingTop - 0.1) continue;
@@ -250,19 +253,28 @@ export function PlayerController() {
           const dist = Math.sqrt(dx * dx + dz * dz);
 
           // Check if actually inside this building's collision
-          if (dist < building.radius + 0.5) {
-            // Add escape direction (away from building center)
-            totalEscapeDir.x += dx / dist;
-            totalEscapeDir.z += dz / dist;
+          if (dist < building.radius + 0.5 && dist < closestDist) {
+            closestDist = dist;
+            closestBuilding = building;
           }
         }
 
-        // If we have an escape direction, push the player out
-        if (totalEscapeDir.x !== 0 || totalEscapeDir.z !== 0) {
-          const escapeSpeed = 8 * dt;
-          const mag = Math.sqrt(totalEscapeDir.x ** 2 + totalEscapeDir.z ** 2);
-          newPosition.x = position.x + (totalEscapeDir.x / mag) * escapeSpeed;
-          newPosition.z = position.z + (totalEscapeDir.z / mag) * escapeSpeed;
+        // Push player out from the closest building
+        if (closestBuilding) {
+          const dx = position.x - closestBuilding.x;
+          const dz = position.z - closestBuilding.z;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+
+          if (dist > 0.01) {
+            // Push away from building center
+            const escapeSpeed = 10 * dt;
+            newPosition.x = position.x + (dx / dist) * escapeSpeed;
+            newPosition.z = position.z + (dz / dist) * escapeSpeed;
+          } else {
+            // Exactly at center - pick a random direction
+            newPosition.x = position.x + 0.5;
+            newPosition.z = position.z + 0.5;
+          }
         }
       } else {
         // Player is outside but trying to move inside - block with sliding
