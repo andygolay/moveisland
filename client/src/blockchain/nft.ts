@@ -135,7 +135,7 @@ export async function fetchOwnedNFTs(walletAddress: string): Promise<NFTData[]> 
 }
 
 // Fetch all NFTs (for testing without wallet)
-export async function fetchAllCollectionNFTs(collectionId: string, limit: number = 10): Promise<NFTData[]> {
+export async function fetchAllCollectionNFTs(_collectionId: string, _limit: number = 10): Promise<NFTData[]> {
   // This would require indexer queries - for now return empty
   // In production, you'd query the Movement indexer
   return [];

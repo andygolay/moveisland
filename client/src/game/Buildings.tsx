@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import * as THREE from 'three';
 import { getTerrainHeight, LOCATIONS } from './Terrain';
 
 // Seeded random for consistent placement

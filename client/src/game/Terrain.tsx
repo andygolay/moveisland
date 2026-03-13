@@ -146,7 +146,7 @@ function getTerrainHeight(x: number, z: number): number {
 
 export function Terrain() {
   // Create geometry only once
-  const { geometry, colors } = useMemo(() => {
+  const { geometry } = useMemo(() => {
     const size = 150;
     const segments = 100;
     const geo = new THREE.PlaneGeometry(size, size, segments, segments);

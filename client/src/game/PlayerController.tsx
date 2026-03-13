@@ -1,6 +1,5 @@
 import { useEffect, useCallback } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
 import { usePlayerStore } from '../stores/playerStore';
 import { getTerrainHeight, LOCATIONS } from './Terrain';
 import { sendPosition } from '../multiplayer/socket';

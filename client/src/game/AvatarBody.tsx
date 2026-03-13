@@ -38,7 +38,6 @@ export function AvatarBody({ isWalking }: AvatarBodyProps) {
 
   const legColor = '#000000'; // Black stick legs
   const legThickness = 0.04; // Thin stick legs
-  const legLength = 0.6;
 
   return (
     <group>
