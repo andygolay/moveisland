@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { getTerrainHeight, LOCATIONS } from './Terrain';
 
 // Tree collision radius by type (based on trunk + canopy)
@@ -592,21 +592,27 @@ const COLUMN_POSITIONS: [number, number, number][] = (() => {
 })();
 
 export function Buildings() {
-  // Use pre-computed data - reuse cached tree/bush positions from collision data
-  const trees = useMemo(() => {
-    // Use cached positions from collision detection (already computed)
-    if (!cachedTreePositions) {
-      cachedTreePositions = generateTreePositions();
-    }
-    return cachedTreePositions.map(t => [t.x, 0, t.z] as [number, number, number]);
-  }, []);
+  // Use deferred computation - compute tree/bush positions after initial render
+  const [trees, setTrees] = useState<[number, number, number][]>([]);
+  const [bushes, setBushes] = useState<[number, number, number][]>([]);
 
-  const bushes = useMemo(() => {
-    // Use cached positions from collision detection (already computed)
-    if (!cachedBushPositions) {
-      cachedBushPositions = generateBushPositions();
-    }
-    return cachedBushPositions.map(b => [b.x, 0, b.z] as [number, number, number]);
+  useEffect(() => {
+    // Defer heavy position generation to allow UI to render first
+    const frameId = requestAnimationFrame(() => {
+      // Generate tree positions if not cached
+      if (!cachedTreePositions) {
+        cachedTreePositions = generateTreePositions();
+      }
+      setTrees(cachedTreePositions.map(t => [t.x, 0, t.z] as [number, number, number]));
+
+      // Generate bush positions if not cached
+      if (!cachedBushPositions) {
+        cachedBushPositions = generateBushPositions();
+      }
+      setBushes(cachedBushPositions.map(b => [b.x, 0, b.z] as [number, number, number]));
+    });
+
+    return () => cancelAnimationFrame(frameId);
   }, []);
 
   return (

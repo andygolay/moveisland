@@ -53,7 +53,7 @@ export function NFTSelector() {
 
   const handleEnterWorld = () => {
     if (selectedNFT) {
-      setScreen('playing');
+      setScreen('loading');
     }
   };
 
@@ -69,7 +69,7 @@ export function NFTSelector() {
       uri: '',
     };
     setSelectedNFT(demoNFT);
-    setScreen('playing');
+    setScreen('loading');
   };
 
   return (

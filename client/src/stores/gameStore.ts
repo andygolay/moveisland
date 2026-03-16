@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type GameScreen = 'connect' | 'select-nft' | 'playing';
+export type GameScreen = 'connect' | 'select-nft' | 'loading' | 'playing';
 
 export interface NFTData {
   tokenId: string;

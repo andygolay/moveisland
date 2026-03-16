@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import * as THREE from 'three';
 
 // Seeded random for consistent terrain
@@ -256,19 +256,30 @@ function createTerrainGeometry(): THREE.PlaneGeometry {
   return geo;
 }
 
-// Pre-computed terrain geometry (runs at module load, not during render)
+// Cached terrain geometry (computed lazily, once)
 let cachedTerrainGeometry: THREE.PlaneGeometry | null = null;
 
-function getTerrainGeometry(): THREE.PlaneGeometry {
-  if (!cachedTerrainGeometry) {
-    cachedTerrainGeometry = createTerrainGeometry();
-  }
-  return cachedTerrainGeometry;
-}
-
 export function Terrain() {
-  // Use pre-computed geometry - no heavy computation during render
-  const geometry = useMemo(() => getTerrainGeometry(), []);
+  const [geometry, setGeometry] = useState<THREE.PlaneGeometry | null>(cachedTerrainGeometry);
+
+  useEffect(() => {
+    if (geometry) return; // Already computed
+
+    // Use requestAnimationFrame to defer computation and allow UI to render first
+    const frameId = requestAnimationFrame(() => {
+      if (!cachedTerrainGeometry) {
+        cachedTerrainGeometry = createTerrainGeometry();
+      }
+      setGeometry(cachedTerrainGeometry);
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, [geometry]);
+
+  // Show nothing while computing - the Suspense fallback in Scene handles this
+  if (!geometry) {
+    return null;
+  }
 
   return (
     <mesh geometry={geometry} receiveShadow castShadow>
