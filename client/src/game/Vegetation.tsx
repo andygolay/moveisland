@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
+import * as THREE from 'three';
 import { getTerrainHeight, LOCATIONS } from './Terrain';
 
 // Tree collision radius by type (based on trunk + canopy)
@@ -22,281 +23,8 @@ function seededRandom(seed: number): number {
   return x - Math.floor(x);
 }
 
-// Olive tree - gnarled trunk, silvery-green foliage with realistic branching
-function OliveTree({ position }: { position: [number, number, number] }) {
-  const [x, , z] = position;
-  const groundY = getTerrainHeight(x, z);
-  const scale = 0.7 + seededRandom(x * 100 + z) * 0.4;
-  const lean = (seededRandom(x * 50 + z * 30) - 0.5) * 0.15;
-
-  return (
-    <group position={[x, groundY, z]} scale={scale} rotation={[lean, seededRandom(x + z) * Math.PI * 2, lean * 0.5]}>
-      {/* Main gnarled trunk */}
-      <mesh position={[0, 0.8, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.12, 0.28, 1.6, 8]} />
-        <meshStandardMaterial color="#4A3D2A" roughness={0.95} />
-      </mesh>
-      {/* Trunk knots/texture */}
-      <mesh position={[0.1, 0.5, 0.08]} castShadow>
-        <sphereGeometry args={[0.08, 6, 6]} />
-        <meshStandardMaterial color="#3D3225" roughness={1} />
-      </mesh>
-      <mesh position={[-0.08, 1.0, 0.1]} castShadow>
-        <sphereGeometry args={[0.06, 6, 6]} />
-        <meshStandardMaterial color="#3D3225" roughness={1} />
-      </mesh>
-      {/* Main branches */}
-      <mesh position={[0.3, 1.5, 0.1]} rotation={[0, 0, -0.6]} castShadow>
-        <cylinderGeometry args={[0.05, 0.08, 0.8, 6]} />
-        <meshStandardMaterial color="#5D4E37" roughness={0.9} />
-      </mesh>
-      <mesh position={[-0.25, 1.6, -0.15]} rotation={[0, 0, 0.5]} castShadow>
-        <cylinderGeometry args={[0.04, 0.07, 0.7, 6]} />
-        <meshStandardMaterial color="#5D4E37" roughness={0.9} />
-      </mesh>
-      <mesh position={[0.1, 1.55, -0.25]} rotation={[0.4, 0, 0.2]} castShadow>
-        <cylinderGeometry args={[0.04, 0.06, 0.6, 6]} />
-        <meshStandardMaterial color="#5D4E37" roughness={0.9} />
-      </mesh>
-      {/* Silvery-green olive foliage - more clusters */}
-      <mesh position={[0, 2.3, 0]} castShadow>
-        <dodecahedronGeometry args={[1.1, 1]} />
-        <meshStandardMaterial color="#708238" roughness={0.85} flatShading />
-      </mesh>
-      <mesh position={[0.6, 2.0, 0.4]} castShadow>
-        <dodecahedronGeometry args={[0.7, 1]} />
-        <meshStandardMaterial color="#7D8B41" roughness={0.85} flatShading />
-      </mesh>
-      <mesh position={[-0.5, 2.1, -0.3]} castShadow>
-        <dodecahedronGeometry args={[0.65, 1]} />
-        <meshStandardMaterial color="#6B7A35" roughness={0.85} flatShading />
-      </mesh>
-      <mesh position={[0.3, 2.5, -0.4]} castShadow>
-        <dodecahedronGeometry args={[0.55, 1]} />
-        <meshStandardMaterial color="#7A8C3E" roughness={0.85} flatShading />
-      </mesh>
-      <mesh position={[-0.4, 2.4, 0.35]} castShadow>
-        <dodecahedronGeometry args={[0.6, 1]} />
-        <meshStandardMaterial color="#6D7B38" roughness={0.85} flatShading />
-      </mesh>
-      <mesh position={[0.5, 2.4, 0]} castShadow>
-        <dodecahedronGeometry args={[0.5, 1]} />
-        <meshStandardMaterial color="#758540" roughness={0.85} flatShading />
-      </mesh>
-    </group>
-  );
-}
-
-// Cypress tree - tall, narrow, iconic Greek silhouette with layered foliage
-function CypressTree({ position }: { position: [number, number, number] }) {
-  const [x, , z] = position;
-  const groundY = getTerrainHeight(x, z);
-  const scale = 0.8 + seededRandom(x * 80 + z * 40) * 0.4;
-  const lean = (seededRandom(x * 33 + z * 77) - 0.5) * 0.08;
-
-  return (
-    <group position={[x, groundY, z]} scale={scale} rotation={[lean, 0, lean * 0.3]}>
-      {/* Trunk - visible at base */}
-      <mesh position={[0, 0.4, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.08, 0.14, 0.8, 8]} />
-        <meshStandardMaterial color="#3D3225" roughness={0.95} />
-      </mesh>
-      {/* Layered conical foliage for realistic cypress shape */}
-      <mesh position={[0, 4.2, 0]} castShadow>
-        <coneGeometry args={[0.35, 1.8, 8]} />
-        <meshStandardMaterial color="#143D30" roughness={0.9} flatShading />
-      </mesh>
-      <mesh position={[0, 3.3, 0]} castShadow>
-        <coneGeometry args={[0.5, 1.6, 8]} />
-        <meshStandardMaterial color="#1B4D3E" roughness={0.88} flatShading />
-      </mesh>
-      <mesh position={[0, 2.5, 0]} castShadow>
-        <coneGeometry args={[0.6, 1.4, 8]} />
-        <meshStandardMaterial color="#1F5240" roughness={0.88} flatShading />
-      </mesh>
-      <mesh position={[0, 1.8, 0]} castShadow>
-        <coneGeometry args={[0.65, 1.2, 8]} />
-        <meshStandardMaterial color="#234F3D" roughness={0.85} flatShading />
-      </mesh>
-      <mesh position={[0, 1.2, 0]} castShadow>
-        <coneGeometry args={[0.55, 0.9, 8]} />
-        <meshStandardMaterial color="#1B4838" roughness={0.85} flatShading />
-      </mesh>
-      {/* Some irregular bumps for texture */}
-      <mesh position={[0.15, 2.8, 0.1]} castShadow>
-        <dodecahedronGeometry args={[0.2, 0]} />
-        <meshStandardMaterial color="#1A4636" roughness={0.9} flatShading />
-      </mesh>
-      <mesh position={[-0.12, 3.5, -0.08]} castShadow>
-        <dodecahedronGeometry args={[0.18, 0]} />
-        <meshStandardMaterial color="#1D4A3A" roughness={0.9} flatShading />
-      </mesh>
-    </group>
-  );
-}
-
-// Pine tree - Mediterranean stone pine with umbrella canopy
-function PineTree({ position }: { position: [number, number, number] }) {
-  const [x, , z] = position;
-  const groundY = getTerrainHeight(x, z);
-  const scale = 0.9 + seededRandom(x * 60 + z * 90) * 0.3;
-  const lean = (seededRandom(x * 22 + z * 88) - 0.5) * 0.1;
-
-  return (
-    <group position={[x, groundY, z]} scale={scale} rotation={[lean, seededRandom(x * 2 + z) * Math.PI * 2, 0]}>
-      {/* Tall trunk with bark texture */}
-      <mesh position={[0, 1.5, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.1, 0.16, 3, 10]} />
-        <meshStandardMaterial color="#6B4423" roughness={0.95} />
-      </mesh>
-      {/* Bark ridges */}
-      <mesh position={[0.08, 1.2, 0.05]} castShadow>
-        <boxGeometry args={[0.03, 0.6, 0.03]} />
-        <meshStandardMaterial color="#5A3A1D" roughness={1} />
-      </mesh>
-      <mesh position={[-0.06, 0.8, -0.07]} castShadow>
-        <boxGeometry args={[0.03, 0.5, 0.03]} />
-        <meshStandardMaterial color="#5A3A1D" roughness={1} />
-      </mesh>
-      {/* Umbrella canopy - characteristic stone pine shape */}
-      <mesh position={[0, 3.5, 0]} castShadow>
-        <sphereGeometry args={[1.5, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2.5]} />
-        <meshStandardMaterial color="#2D5A3D" roughness={0.8} flatShading />
-      </mesh>
-      <mesh position={[0.6, 3.3, 0.4]} castShadow>
-        <dodecahedronGeometry args={[0.6, 1]} />
-        <meshStandardMaterial color="#3A6B4A" roughness={0.85} flatShading />
-      </mesh>
-      <mesh position={[-0.5, 3.4, -0.3]} castShadow>
-        <dodecahedronGeometry args={[0.55, 1]} />
-        <meshStandardMaterial color="#2F5F40" roughness={0.85} flatShading />
-      </mesh>
-      <mesh position={[0.3, 3.6, -0.5]} castShadow>
-        <dodecahedronGeometry args={[0.5, 1]} />
-        <meshStandardMaterial color="#356845" roughness={0.85} flatShading />
-      </mesh>
-      <mesh position={[-0.4, 3.2, 0.5]} castShadow>
-        <dodecahedronGeometry args={[0.45, 1]} />
-        <meshStandardMaterial color="#325F42" roughness={0.85} flatShading />
-      </mesh>
-    </group>
-  );
-}
-
-// Fig tree - broad, spreading canopy with large leaves
-function FigTree({ position }: { position: [number, number, number] }) {
-  const [x, , z] = position;
-  const groundY = getTerrainHeight(x, z);
-  const scale = 0.7 + seededRandom(x * 45 + z * 75) * 0.3;
-  const lean = (seededRandom(x * 55 + z * 25) - 0.5) * 0.1;
-
-  return (
-    <group position={[x, groundY, z]} scale={scale} rotation={[lean, seededRandom(x * 3 + z * 2) * Math.PI * 2, 0]}>
-      {/* Multi-trunk structure */}
-      <mesh position={[0, 0.6, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.15, 0.25, 1.2, 8]} />
-        <meshStandardMaterial color="#5C4033" roughness={0.9} />
-      </mesh>
-      <mesh position={[0.15, 0.7, 0.1]} rotation={[0, 0, -0.2]} castShadow>
-        <cylinderGeometry args={[0.06, 0.1, 0.9, 6]} />
-        <meshStandardMaterial color="#5C4033" roughness={0.9} />
-      </mesh>
-      <mesh position={[-0.12, 0.65, -0.08]} rotation={[0, 0, 0.15]} castShadow>
-        <cylinderGeometry args={[0.05, 0.08, 0.8, 6]} />
-        <meshStandardMaterial color="#5C4033" roughness={0.9} />
-      </mesh>
-      {/* Large overlapping foliage for broad canopy */}
-      <mesh position={[0, 1.9, 0]} castShadow>
-        <dodecahedronGeometry args={[1.2, 1]} />
-        <meshStandardMaterial color="#4A7C23" roughness={0.75} flatShading />
-      </mesh>
-      <mesh position={[0.7, 1.7, 0.5]} castShadow>
-        <dodecahedronGeometry args={[0.8, 1]} />
-        <meshStandardMaterial color="#5A8C2A" roughness={0.75} flatShading />
-      </mesh>
-      <mesh position={[-0.6, 1.8, -0.4]} castShadow>
-        <dodecahedronGeometry args={[0.75, 1]} />
-        <meshStandardMaterial color="#4D7A26" roughness={0.75} flatShading />
-      </mesh>
-      <mesh position={[0.3, 2.1, -0.6]} castShadow>
-        <dodecahedronGeometry args={[0.6, 1]} />
-        <meshStandardMaterial color="#558425" roughness={0.75} flatShading />
-      </mesh>
-      <mesh position={[-0.5, 1.6, 0.5]} castShadow>
-        <dodecahedronGeometry args={[0.65, 1]} />
-        <meshStandardMaterial color="#4F7E28" roughness={0.75} flatShading />
-      </mesh>
-    </group>
-  );
-}
-
-// Flowering bush with Mediterranean flowers
-function FloweringBush({ position }: { position: [number, number, number] }) {
-  const [x, , z] = position;
-  const groundY = getTerrainHeight(x, z);
-  const scale = 0.5 + seededRandom(x * 50 + z * 30) * 0.5;
-  const colorVariant = seededRandom(x * 20 + z * 60);
-
-  // Pick base foliage color
-  const foliageColor = colorVariant > 0.6 ? '#4A6741' : colorVariant > 0.3 ? '#5D7A4A' : '#3D5A35';
-
-  // Pick flower color - Mediterranean palette
-  const flowerColorVariant = seededRandom(x * 35 + z * 45);
-  const flowerColor = flowerColorVariant > 0.7 ? '#E8A4C9' : // Pink
-                      flowerColorVariant > 0.4 ? '#F4E04D' : // Yellow
-                      flowerColorVariant > 0.2 ? '#C9A0DC' : // Lavender
-                      '#FFFFFF'; // White
-
-  return (
-    <group position={[x, groundY, z]} scale={scale}>
-      {/* Main bush body */}
-      <mesh position={[0, 0.4, 0]} castShadow>
-        <dodecahedronGeometry args={[0.6, 1]} />
-        <meshStandardMaterial color={foliageColor} roughness={0.85} flatShading />
-      </mesh>
-      <mesh position={[0.25, 0.35, 0.15]} castShadow>
-        <dodecahedronGeometry args={[0.4, 1]} />
-        <meshStandardMaterial color={foliageColor} roughness={0.85} flatShading />
-      </mesh>
-      <mesh position={[-0.2, 0.45, -0.1]} castShadow>
-        <dodecahedronGeometry args={[0.35, 1]} />
-        <meshStandardMaterial color={foliageColor} roughness={0.85} flatShading />
-      </mesh>
-      {/* Flower clusters */}
-      <mesh position={[0.15, 0.7, 0.1]} castShadow>
-        <sphereGeometry args={[0.08, 6, 6]} />
-        <meshStandardMaterial color={flowerColor} roughness={0.6} />
-      </mesh>
-      <mesh position={[-0.1, 0.65, 0.2]} castShadow>
-        <sphereGeometry args={[0.07, 6, 6]} />
-        <meshStandardMaterial color={flowerColor} roughness={0.6} />
-      </mesh>
-      <mesh position={[0.2, 0.55, -0.15]} castShadow>
-        <sphereGeometry args={[0.06, 6, 6]} />
-        <meshStandardMaterial color={flowerColor} roughness={0.6} />
-      </mesh>
-      <mesh position={[-0.15, 0.6, -0.1]} castShadow>
-        <sphereGeometry args={[0.07, 6, 6]} />
-        <meshStandardMaterial color={flowerColor} roughness={0.6} />
-      </mesh>
-    </group>
-  );
-}
-
-// Generic tree component that picks a random tree type
-function MediterraneanTree({ position, seed }: { position: [number, number, number]; seed: number }) {
-  const treeType = seededRandom(seed * 123.456);
-
-  if (treeType < 0.3) {
-    return <OliveTree position={position} />;
-  } else if (treeType < 0.5) {
-    return <CypressTree position={position} />;
-  } else if (treeType < 0.7) {
-    return <PineTree position={position} />;
-  } else {
-    return <FigTree position={position} />;
-  }
-}
+// Tree types
+type TreeType = 'olive' | 'cypress' | 'pine' | 'fig';
 
 // Check if position is too close to roads
 function isNearRoad(x: number, z: number): boolean {
@@ -357,12 +85,30 @@ function isNearBuilding(x: number, z: number): boolean {
   return false;
 }
 
-// Tree types
-type TreeType = 'olive' | 'cypress' | 'pine' | 'fig';
+// Tree instance data
+interface TreeInstance {
+  x: number;
+  z: number;
+  terrainY: number;
+  scale: number;
+  rotation: number;
+  lean: number;
+  type: TreeType;
+}
 
-// Generate tree positions - more trees for a lush look
-function generateTreePositions(): { x: number; z: number; scale: number; type: TreeType; terrainY: number }[] {
-  const positions: { x: number; z: number; scale: number; type: TreeType; terrainY: number }[] = [];
+// Bush instance data
+interface BushInstance {
+  x: number;
+  z: number;
+  terrainY: number;
+  scale: number;
+  colorVariant: number;
+  flowerVariant: number;
+}
+
+// Generate tree positions
+function generateTreePositions(): TreeInstance[] {
+  const positions: TreeInstance[] = [];
   for (let i = 0; i < 120; i++) {
     const seed = i * 137.5;
     const angle = seededRandom(seed) * Math.PI * 2;
@@ -373,7 +119,6 @@ function generateTreePositions(): { x: number; z: number; scale: number; type: T
     const terrainY = getTerrainHeight(x, z);
     if (isNearRoad(x, z) || isNearBuilding(x, z) || terrainY < 0.5) continue;
 
-    // Skip if near island edge (check surrounding terrain)
     const edgeCheck = 1.5;
     const minSurroundingHeight = Math.min(
       getTerrainHeight(x + edgeCheck, z),
@@ -400,14 +145,17 @@ function generateTreePositions(): { x: number; z: number; scale: number; type: T
       type = 'fig';
     }
 
-    positions.push({ x, z, scale, type, terrainY });
+    const rotation = seededRandom(x + z) * Math.PI * 2;
+    const lean = (seededRandom(x * 50 + z * 30) - 0.5) * 0.15;
+
+    positions.push({ x, z, terrainY, scale, rotation, lean, type });
   }
   return positions;
 }
 
-// Generate bush positions - more bushes
-function generateBushPositions(): { x: number; z: number; scale: number }[] {
-  const positions: { x: number; z: number; scale: number }[] = [];
+// Generate bush positions
+function generateBushPositions(): BushInstance[] {
+  const positions: BushInstance[] = [];
   for (let i = 0; i < 80; i++) {
     const seed = i * 73.7 + 500;
     const angle = seededRandom(seed) * Math.PI * 2;
@@ -418,7 +166,6 @@ function generateBushPositions(): { x: number; z: number; scale: number }[] {
     const terrainY = getTerrainHeight(x, z);
     if (isNearRoad(x, z) || isNearBuilding(x, z) || terrainY < 0.5) continue;
 
-    // Skip if near island edge
     const edgeCheck = 1.0;
     const minSurroundingHeight = Math.min(
       getTerrainHeight(x + edgeCheck, z),
@@ -429,14 +176,17 @@ function generateBushPositions(): { x: number; z: number; scale: number }[] {
     if (minSurroundingHeight < 1.0) continue;
 
     const scale = 0.5 + seededRandom(x * 50 + z * 30) * 0.5;
-    positions.push({ x, z, scale });
+    const colorVariant = seededRandom(x * 20 + z * 60);
+    const flowerVariant = seededRandom(x * 35 + z * 45);
+
+    positions.push({ x, z, terrainY, scale, colorVariant, flowerVariant });
   }
   return positions;
 }
 
-// Cached positions for collision detection
-let cachedTreePositions: { x: number; z: number; scale: number; type: TreeType; terrainY: number }[] | null = null;
-let cachedBushPositions: { x: number; z: number; scale: number }[] | null = null;
+// Cached positions
+let cachedTreePositions: TreeInstance[] | null = null;
+let cachedBushPositions: BushInstance[] | null = null;
 
 // Export tree positions for collision detection
 export function getTreeCollisionData(): {
@@ -470,35 +220,293 @@ export function getBushCollisionData(): { x: number; z: number; radius: number }
   }));
 }
 
-// Main Vegetation component
-export function Vegetation() {
-  const [trees, setTrees] = useState<[number, number, number][]>([]);
-  const [bushes, setBushes] = useState<[number, number, number][]>([]);
+// Instanced tree component - renders all trees of one type efficiently
+function InstancedTrees({ trees, type }: { trees: TreeInstance[]; type: TreeType }) {
+  const filteredTrees = useMemo(() => trees.filter(t => t.type === type), [trees, type]);
+  const count = filteredTrees.length;
 
+  // Refs for instanced meshes
+  const trunkRef = useRef<THREE.InstancedMesh>(null);
+  const foliageRef = useRef<THREE.InstancedMesh>(null);
+  const foliage2Ref = useRef<THREE.InstancedMesh>(null);
+
+  // Set up instance matrices
   useEffect(() => {
-    const frameId = requestAnimationFrame(() => {
-      if (!cachedTreePositions) {
-        cachedTreePositions = generateTreePositions();
-      }
-      setTrees(cachedTreePositions.map(t => [t.x, 0, t.z] as [number, number, number]));
+    if (!trunkRef.current || !foliageRef.current || !foliage2Ref.current) return;
 
-      if (!cachedBushPositions) {
-        cachedBushPositions = generateBushPositions();
-      }
-      setBushes(cachedBushPositions.map(b => [b.x, 0, b.z] as [number, number, number]));
+    const tempMatrix = new THREE.Matrix4();
+    const tempPosition = new THREE.Vector3();
+    const tempQuaternion = new THREE.Quaternion();
+    const tempScale = new THREE.Vector3();
+    const tempEuler = new THREE.Euler();
+
+    filteredTrees.forEach((tree, i) => {
+      const { x, z, terrainY, scale, rotation, lean } = tree;
+
+      // Trunk matrix
+      tempPosition.set(x, terrainY + getTrunkHeight(type) * scale, z);
+      tempEuler.set(lean, rotation, lean * 0.5);
+      tempQuaternion.setFromEuler(tempEuler);
+      tempScale.set(scale, scale, scale);
+      tempMatrix.compose(tempPosition, tempQuaternion, tempScale);
+      trunkRef.current!.setMatrixAt(i, tempMatrix);
+
+      // Main foliage matrix
+      tempPosition.set(x, terrainY + getFoliageHeight(type) * scale, z);
+      tempMatrix.compose(tempPosition, tempQuaternion, tempScale);
+      foliageRef.current!.setMatrixAt(i, tempMatrix);
+
+      // Secondary foliage matrix (offset)
+      const offset = getFoliageOffset(type);
+      tempPosition.set(x + offset.x * scale, terrainY + (getFoliageHeight(type) + offset.y) * scale, z + offset.z * scale);
+      tempMatrix.compose(tempPosition, tempQuaternion, tempScale);
+      foliage2Ref.current!.setMatrixAt(i, tempMatrix);
     });
 
-    return () => cancelAnimationFrame(frameId);
+    trunkRef.current.instanceMatrix.needsUpdate = true;
+    foliageRef.current.instanceMatrix.needsUpdate = true;
+    foliage2Ref.current.instanceMatrix.needsUpdate = true;
+  }, [filteredTrees, type]);
+
+  if (count === 0) return null;
+
+  const { trunkGeo, trunkColor, foliageGeo, foliageColor, foliage2Color } = getTreeGeometryConfig(type);
+
+  return (
+    <group>
+      {/* Trunk */}
+      <instancedMesh ref={trunkRef} args={[undefined, undefined, count]} castShadow receiveShadow>
+        <cylinderGeometry args={trunkGeo} />
+        <meshStandardMaterial color={trunkColor} roughness={0.95} />
+      </instancedMesh>
+
+      {/* Main foliage */}
+      <instancedMesh ref={foliageRef} args={[undefined, undefined, count]} castShadow>
+        <dodecahedronGeometry args={foliageGeo} />
+        <meshStandardMaterial color={foliageColor} roughness={0.85} flatShading />
+      </instancedMesh>
+
+      {/* Secondary foliage */}
+      <instancedMesh ref={foliage2Ref} args={[undefined, undefined, count]} castShadow>
+        <dodecahedronGeometry args={[foliageGeo[0] * 0.7, foliageGeo[1]]} />
+        <meshStandardMaterial color={foliage2Color} roughness={0.85} flatShading />
+      </instancedMesh>
+    </group>
+  );
+}
+
+// Helper functions for tree geometry configuration
+function getTrunkHeight(type: TreeType): number {
+  switch (type) {
+    case 'olive': return 0.8;
+    case 'cypress': return 0.4;
+    case 'pine': return 1.5;
+    case 'fig': return 0.6;
+  }
+}
+
+function getFoliageHeight(type: TreeType): number {
+  switch (type) {
+    case 'olive': return 2.3;
+    case 'cypress': return 2.5;
+    case 'pine': return 3.5;
+    case 'fig': return 1.9;
+  }
+}
+
+function getFoliageOffset(type: TreeType): { x: number; y: number; z: number } {
+  switch (type) {
+    case 'olive': return { x: 0.5, y: -0.3, z: 0.3 };
+    case 'cypress': return { x: 0, y: 0.8, z: 0 };
+    case 'pine': return { x: 0.5, y: -0.2, z: 0.3 };
+    case 'fig': return { x: 0.6, y: -0.2, z: 0.4 };
+  }
+}
+
+function getTreeGeometryConfig(type: TreeType): {
+  trunkGeo: [number, number, number, number];
+  trunkColor: string;
+  foliageGeo: [number, number];
+  foliageColor: string;
+  foliage2Color: string;
+} {
+  switch (type) {
+    case 'olive':
+      return {
+        trunkGeo: [0.12, 0.25, 1.6, 8],
+        trunkColor: '#4A3D2A',
+        foliageGeo: [1.1, 1],
+        foliageColor: '#708238',
+        foliage2Color: '#7D8B41',
+      };
+    case 'cypress':
+      return {
+        trunkGeo: [0.08, 0.14, 0.8, 8],
+        trunkColor: '#3D3225',
+        foliageGeo: [0.6, 1],
+        foliageColor: '#1B4D3E',
+        foliage2Color: '#143D30',
+      };
+    case 'pine':
+      return {
+        trunkGeo: [0.1, 0.16, 3, 8],
+        trunkColor: '#6B4423',
+        foliageGeo: [1.5, 1],
+        foliageColor: '#2D5A3D',
+        foliage2Color: '#3A6B4A',
+      };
+    case 'fig':
+      return {
+        trunkGeo: [0.15, 0.25, 1.2, 8],
+        trunkColor: '#5C4033',
+        foliageGeo: [1.2, 1],
+        foliageColor: '#4A7C23',
+        foliage2Color: '#5A8C2A',
+      };
+  }
+}
+
+// Instanced bushes component
+function InstancedBushes({ bushes }: { bushes: BushInstance[] }) {
+  const count = bushes.length;
+
+  const mainRef = useRef<THREE.InstancedMesh>(null);
+  const secondary1Ref = useRef<THREE.InstancedMesh>(null);
+  const flowerRef = useRef<THREE.InstancedMesh>(null);
+
+  // Colors for instances
+  const colorArray = useMemo(() => {
+    const colors = new Float32Array(count * 3);
+    bushes.forEach((bush, i) => {
+      const { colorVariant } = bush;
+      let r, g, b;
+      if (colorVariant > 0.6) {
+        r = 0.29; g = 0.40; b = 0.25; // #4A6741
+      } else if (colorVariant > 0.3) {
+        r = 0.36; g = 0.48; b = 0.29; // #5D7A4A
+      } else {
+        r = 0.24; g = 0.35; b = 0.21; // #3D5A35
+      }
+      colors[i * 3] = r;
+      colors[i * 3 + 1] = g;
+      colors[i * 3 + 2] = b;
+    });
+    return colors;
+  }, [bushes, count]);
+
+  const flowerColorArray = useMemo(() => {
+    const colors = new Float32Array(count * 3);
+    bushes.forEach((bush, i) => {
+      const { flowerVariant } = bush;
+      let r, g, b;
+      if (flowerVariant > 0.7) {
+        r = 0.91; g = 0.64; b = 0.79; // Pink
+      } else if (flowerVariant > 0.4) {
+        r = 0.96; g = 0.88; b = 0.30; // Yellow
+      } else if (flowerVariant > 0.2) {
+        r = 0.79; g = 0.63; b = 0.86; // Lavender
+      } else {
+        r = 1; g = 1; b = 1; // White
+      }
+      colors[i * 3] = r;
+      colors[i * 3 + 1] = g;
+      colors[i * 3 + 2] = b;
+    });
+    return colors;
+  }, [bushes, count]);
+
+  useEffect(() => {
+    if (!mainRef.current || !secondary1Ref.current || !flowerRef.current) return;
+
+    const tempMatrix = new THREE.Matrix4();
+    const tempPosition = new THREE.Vector3();
+    const tempQuaternion = new THREE.Quaternion();
+    const tempScale = new THREE.Vector3();
+
+    // Set instance colors
+    mainRef.current.instanceColor = new THREE.InstancedBufferAttribute(colorArray, 3);
+    secondary1Ref.current.instanceColor = new THREE.InstancedBufferAttribute(colorArray.slice(), 3);
+    flowerRef.current.instanceColor = new THREE.InstancedBufferAttribute(flowerColorArray, 3);
+
+    bushes.forEach((bush, i) => {
+      const { x, z, terrainY, scale } = bush;
+
+      // Main bush body
+      tempPosition.set(x, terrainY + 0.4 * scale, z);
+      tempQuaternion.identity();
+      tempScale.set(scale, scale, scale);
+      tempMatrix.compose(tempPosition, tempQuaternion, tempScale);
+      mainRef.current!.setMatrixAt(i, tempMatrix);
+
+      // Secondary bush lump
+      tempPosition.set(x + 0.25 * scale, terrainY + 0.35 * scale, z + 0.15 * scale);
+      tempScale.set(scale * 0.7, scale * 0.7, scale * 0.7);
+      tempMatrix.compose(tempPosition, tempQuaternion, tempScale);
+      secondary1Ref.current!.setMatrixAt(i, tempMatrix);
+
+      // Flowers on top
+      tempPosition.set(x + 0.1 * scale, terrainY + 0.7 * scale, z + 0.05 * scale);
+      tempScale.set(scale * 0.15, scale * 0.15, scale * 0.15);
+      tempMatrix.compose(tempPosition, tempQuaternion, tempScale);
+      flowerRef.current!.setMatrixAt(i, tempMatrix);
+    });
+
+    mainRef.current.instanceMatrix.needsUpdate = true;
+    secondary1Ref.current.instanceMatrix.needsUpdate = true;
+    flowerRef.current.instanceMatrix.needsUpdate = true;
+  }, [bushes, colorArray, flowerColorArray]);
+
+  if (count === 0) return null;
+
+  return (
+    <group>
+      {/* Main bush body */}
+      <instancedMesh ref={mainRef} args={[undefined, undefined, count]} castShadow>
+        <dodecahedronGeometry args={[0.6, 1]} />
+        <meshStandardMaterial vertexColors roughness={0.85} flatShading />
+      </instancedMesh>
+
+      {/* Secondary lump */}
+      <instancedMesh ref={secondary1Ref} args={[undefined, undefined, count]} castShadow>
+        <dodecahedronGeometry args={[0.5, 1]} />
+        <meshStandardMaterial vertexColors roughness={0.85} flatShading />
+      </instancedMesh>
+
+      {/* Flowers */}
+      <instancedMesh ref={flowerRef} args={[undefined, undefined, count]} castShadow>
+        <sphereGeometry args={[0.5, 6, 6]} />
+        <meshStandardMaterial vertexColors roughness={0.6} />
+      </instancedMesh>
+    </group>
+  );
+}
+
+// Main Vegetation component using instancing
+export function Vegetation() {
+  const trees = useMemo(() => {
+    if (!cachedTreePositions) {
+      cachedTreePositions = generateTreePositions();
+    }
+    return cachedTreePositions;
+  }, []);
+
+  const bushes = useMemo(() => {
+    if (!cachedBushPositions) {
+      cachedBushPositions = generateBushPositions();
+    }
+    return cachedBushPositions;
   }, []);
 
   return (
     <group>
-      {trees.map((pos, i) => (
-        <MediterraneanTree key={`tree-${i}`} position={pos} seed={i} />
-      ))}
-      {bushes.map((pos, i) => (
-        <FloweringBush key={`bush-${i}`} position={pos} />
-      ))}
+      {/* Instanced trees by type */}
+      <InstancedTrees trees={trees} type="olive" />
+      <InstancedTrees trees={trees} type="cypress" />
+      <InstancedTrees trees={trees} type="pine" />
+      <InstancedTrees trees={trees} type="fig" />
+
+      {/* Instanced bushes */}
+      <InstancedBushes bushes={bushes} />
     </group>
   );
 }
