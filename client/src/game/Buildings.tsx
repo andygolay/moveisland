@@ -404,17 +404,8 @@ function generateTreePositions(): { x: number; z: number; scale: number; type: T
     const z = Math.sin(angle) * radius;
 
     const terrainY = getTerrainHeight(x, z);
-    if (isNearRoad(x, z) || isNearBuilding(x, z) || terrainY < 0.5) continue;
-
-    // Skip if near island edge (check surrounding terrain)
-    const edgeCheck = 1.5;
-    const minSurroundingHeight = Math.min(
-      getTerrainHeight(x + edgeCheck, z),
-      getTerrainHeight(x - edgeCheck, z),
-      getTerrainHeight(x, z + edgeCheck),
-      getTerrainHeight(x, z - edgeCheck)
-    );
-    if (minSurroundingHeight < 1.0) continue;
+    // Simple check - skip if near road or underwater (no expensive edge checks)
+    if (isNearRoad(x, z) || terrainY < 0.8) continue;
 
     // Calculate scale and type based on tree type
     const treeTypeRand = seededRandom(i * 123.456);
@@ -449,18 +440,9 @@ function generateBushPositions(): { x: number; z: number; scale: number }[] {
     const x = Math.cos(angle) * radius;
     const z = Math.sin(angle) * radius;
 
-    const height = getTerrainHeight(x, z);
-    if (isNearRoad(x, z) || isNearBuilding(x, z) || height < 0.5) continue;
-
-    // Skip if near island edge
-    const edgeCheck = 1.0;
-    const minSurroundingHeight = Math.min(
-      getTerrainHeight(x + edgeCheck, z),
-      getTerrainHeight(x - edgeCheck, z),
-      getTerrainHeight(x, z + edgeCheck),
-      getTerrainHeight(x, z - edgeCheck)
-    );
-    if (minSurroundingHeight < 1.0) continue;
+    const terrainY = getTerrainHeight(x, z);
+    // Simple check - skip if near road or underwater (no expensive edge checks)
+    if (isNearRoad(x, z) || terrainY < 0.8) continue;
 
     const scale = 0.5 + seededRandom(x * 50 + z * 30) * 0.5;
     positions.push({ x, z, scale });
@@ -525,17 +507,6 @@ const BUILDING_POSITIONS: { x: number; z: number; scale: number }[] = [
   // Lighthouse area
   { x: LOCATIONS.LIGHTHOUSE.x - 6, z: LOCATIONS.LIGHTHOUSE.z + 4, scale: 0.9 },
 ];
-
-// Check if position is too close to a building
-function isNearBuilding(x: number, z: number): boolean {
-  for (const building of BUILDING_POSITIONS) {
-    const dist = Math.sqrt((x - building.x) ** 2 + (z - building.z) ** 2);
-    // Building is 3x3 units scaled, plus buffer for tree canopy
-    const minDist = 3 * building.scale + 2;
-    if (dist < minDist) return true;
-  }
-  return false;
-}
 
 // Check if position is too close to roads (for tree placement)
 function isNearRoad(x: number, z: number): boolean {
