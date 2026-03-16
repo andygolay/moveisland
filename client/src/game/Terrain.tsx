@@ -98,6 +98,53 @@ function getRoadFactor(x: number, z: number): number {
   return 0;
 }
 
+// Get terrain height AND road factor together to avoid computing road factor twice
+function getTerrainData(x: number, z: number): { height: number; roadFactor: number } {
+  const distFromCenter = Math.sqrt(x * x + z * z);
+  const maxRadius = 60;
+
+  // Island falloff - smooth dome shape
+  const normalizedDist = distFromCenter / maxRadius;
+  if (normalizedDist > 1) return { height: -2, roadFactor: 0 }; // Under water
+
+  // Main island shape - gentler, flatter profile
+  const islandBase = Math.cos(normalizedDist * Math.PI * 0.5) * 4;
+
+  // Very gentle rolling hills
+  const hillX = x * 0.04;
+  const hillZ = z * 0.04;
+  const hills = noise2D(hillX, hillZ) * 1.5 * (1 - normalizedDist);
+
+  // Minimal detail noise
+  const detailX = x * 0.1;
+  const detailZ = z * 0.1;
+  const detail = noise2D(detailX + 100, detailZ + 100) * 0.3;
+
+  // Beach zone
+  const beachZone = normalizedDist > 0.75 ? (normalizedDist - 0.75) / 0.25 : 0;
+  const beachFlattening = 1 - beachZone * 0.9;
+
+  let height = (islandBase + hills * beachFlattening + detail * beachFlattening);
+
+  // Ensure beaches are just above water
+  if (normalizedDist > 0.85) {
+    height = Math.max(0.3, height * (1 - (normalizedDist - 0.85) / 0.15));
+  } else {
+    height = Math.max(0.5, height);
+  }
+
+  // Get road factor once
+  const roadFactor = getRoadFactor(x, z);
+
+  // Flatten terrain along roads
+  if (roadFactor > 0) {
+    const roadHeight = 1.0 + islandBase * 0.15;
+    height = height * (1 - roadFactor) + roadHeight * roadFactor;
+  }
+
+  return { height, roadFactor };
+}
+
 // Create island heightmap - mostly flat with gentle slopes
 function getTerrainHeight(x: number, z: number): number {
   const distFromCenter = Math.sqrt(x * x + z * z);
@@ -144,72 +191,84 @@ function getTerrainHeight(x: number, z: number): number {
   return height;
 }
 
-export function Terrain() {
-  // Create geometry only once
-  const { geometry } = useMemo(() => {
-    const size = 150;
-    const segments = 200; // Higher resolution for accurate tree placement
-    const geo = new THREE.PlaneGeometry(size, size, segments, segments);
+// Pre-compute terrain geometry at module level to avoid blocking render
+function createTerrainGeometry(): THREE.PlaneGeometry {
+  const size = 150;
+  const segments = 128; // Reduced from 200 for faster computation (still good quality)
+  const geo = new THREE.PlaneGeometry(size, size, segments, segments);
 
-    // Rotate to be horizontal
-    geo.rotateX(-Math.PI / 2);
+  // Rotate to be horizontal
+  geo.rotateX(-Math.PI / 2);
 
-    // Apply heightmap
-    const positions = geo.attributes.position.array as Float32Array;
-    const colorArray = new Float32Array(positions.length);
+  // Apply heightmap
+  const positions = geo.attributes.position.array as Float32Array;
+  const colorArray = new Float32Array(positions.length);
 
-    for (let i = 0; i < positions.length; i += 3) {
-      const x = positions[i];
-      const z = positions[i + 2];
-      const height = getTerrainHeight(x, z);
-      positions[i + 1] = height;
+  for (let i = 0; i < positions.length; i += 3) {
+    const x = positions[i];
+    const z = positions[i + 2];
 
-      // Check if on road
-      const roadFactor = getRoadFactor(x, z);
+    // Use combined function to get height and road factor together (avoids computing road factor twice)
+    const { height, roadFactor } = getTerrainData(x, z);
+    positions[i + 1] = height;
 
-      // Base terrain color - lush green grass
-      let r, g, b;
-      if (height < 0.6) {
-        // Sandy beach
-        r = 0.93; g = 0.87; b = 0.73;
-      } else if (height < 1.5) {
-        // Light grass near beach
-        r = 0.45; g = 0.72; b = 0.32;
-      } else if (height < 3) {
-        // Lush green grass
-        r = 0.35; g = 0.65; b = 0.25;
-      } else if (height < 5) {
-        // Darker green
-        r = 0.28; g = 0.55; b = 0.20;
-      } else {
-        // Hilltop grass
-        r = 0.38; g = 0.58; b = 0.28;
-      }
-
-      // Blend with road color (light stone/cobblestone path)
-      if (roadFactor > 0) {
-        // Add subtle variation to road color
-        const variation = noise2D(x * 0.3, z * 0.3) * 0.04;
-        const roadR = 0.78 + variation;
-        const roadG = 0.70 + variation;
-        const roadB = 0.55 + variation;
-
-        // Blend terrain with road
-        r = r * (1 - roadFactor) + roadR * roadFactor;
-        g = g * (1 - roadFactor) + roadG * roadFactor;
-        b = b * (1 - roadFactor) + roadB * roadFactor;
-      }
-
-      colorArray[i] = r;
-      colorArray[i + 1] = g;
-      colorArray[i + 2] = b;
+    // Base terrain color - lush green grass
+    let r, g, b;
+    if (height < 0.6) {
+      // Sandy beach
+      r = 0.93; g = 0.87; b = 0.73;
+    } else if (height < 1.5) {
+      // Light grass near beach
+      r = 0.45; g = 0.72; b = 0.32;
+    } else if (height < 3) {
+      // Lush green grass
+      r = 0.35; g = 0.65; b = 0.25;
+    } else if (height < 5) {
+      // Darker green
+      r = 0.28; g = 0.55; b = 0.20;
+    } else {
+      // Hilltop grass
+      r = 0.38; g = 0.58; b = 0.28;
     }
 
-    geo.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
-    geo.computeVertexNormals();
+    // Blend with road color (light stone/cobblestone path)
+    if (roadFactor > 0) {
+      // Add subtle variation to road color
+      const variation = noise2D(x * 0.3, z * 0.3) * 0.04;
+      const roadR = 0.78 + variation;
+      const roadG = 0.70 + variation;
+      const roadB = 0.55 + variation;
 
-    return { geometry: geo, colors: colorArray };
-  }, []);
+      // Blend terrain with road
+      r = r * (1 - roadFactor) + roadR * roadFactor;
+      g = g * (1 - roadFactor) + roadG * roadFactor;
+      b = b * (1 - roadFactor) + roadB * roadFactor;
+    }
+
+    colorArray[i] = r;
+    colorArray[i + 1] = g;
+    colorArray[i + 2] = b;
+  }
+
+  geo.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
+  geo.computeVertexNormals();
+
+  return geo;
+}
+
+// Pre-computed terrain geometry (runs at module load, not during render)
+let cachedTerrainGeometry: THREE.PlaneGeometry | null = null;
+
+function getTerrainGeometry(): THREE.PlaneGeometry {
+  if (!cachedTerrainGeometry) {
+    cachedTerrainGeometry = createTerrainGeometry();
+  }
+  return cachedTerrainGeometry;
+}
+
+export function Terrain() {
+  // Use pre-computed geometry - no heavy computation during render
+  const geometry = useMemo(() => getTerrainGeometry(), []);
 
   return (
     <mesh geometry={geometry} receiveShadow castShadow>

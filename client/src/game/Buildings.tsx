@@ -573,91 +573,46 @@ function isNearRoad(x: number, z: number): boolean {
   return false;
 }
 
+// Pre-compute building positions at module level
+const BUILDING_DATA = BUILDING_POSITIONS.map(b => ({
+  pos: [b.x, 0, b.z] as [number, number, number],
+  scale: b.scale,
+}));
+
+// Pre-compute column positions at module level
+const COLUMN_POSITIONS: [number, number, number][] = (() => {
+  const positions: [number, number, number][] = [];
+  const tx = LOCATIONS.TEMPLE.x;
+  const tz = LOCATIONS.TEMPLE.z;
+  for (let i = 0; i < 5; i++) {
+    positions.push([tx - 6 + i * 3, 0, tz - 4]);
+    positions.push([tx - 6 + i * 3, 0, tz + 4]);
+  }
+  return positions;
+})();
+
 export function Buildings() {
-  // Use the shared building positions
-  const buildings = useMemo(() => {
-    return BUILDING_POSITIONS.map(b => ({
-      pos: [b.x, 0, b.z] as [number, number, number],
-      scale: b.scale,
-    }));
-  }, []);
-
-  // Olive trees scattered around (deterministic, avoiding roads) - many more trees!
+  // Use pre-computed data - reuse cached tree/bush positions from collision data
   const trees = useMemo(() => {
-    const positions: [number, number, number][] = [];
-    for (let i = 0; i < 120; i++) {
-      const seed = i * 137.5; // Golden angle-ish for good distribution
-      const angle = seededRandom(seed) * Math.PI * 2;
-      const radius = 8 + seededRandom(seed + 1) * 48;
-      const x = Math.cos(angle) * radius;
-      const z = Math.sin(angle) * radius;
-
-      // Skip if too close to road, building, or if underwater
-      const height = getTerrainHeight(x, z);
-      if (isNearRoad(x, z) || isNearBuilding(x, z) || height < 0.5) continue;
-
-      // Skip if near island edge (check surrounding terrain)
-      const edgeCheck = 1.5; // Check radius around tree
-      const minSurroundingHeight = Math.min(
-        getTerrainHeight(x + edgeCheck, z),
-        getTerrainHeight(x - edgeCheck, z),
-        getTerrainHeight(x, z + edgeCheck),
-        getTerrainHeight(x, z - edgeCheck)
-      );
-      if (minSurroundingHeight < 1.0) continue; // Skip if any surrounding point is too low
-
-      positions.push([x, 0, z]);
+    // Use cached positions from collision detection (already computed)
+    if (!cachedTreePositions) {
+      cachedTreePositions = generateTreePositions();
     }
-    return positions;
+    return cachedTreePositions.map(t => [t.x, 0, t.z] as [number, number, number]);
   }, []);
 
-  // Temple columns at the Temple location
-  const columns = useMemo(() => {
-    const positions: [number, number, number][] = [];
-    const tx = LOCATIONS.TEMPLE.x;
-    const tz = LOCATIONS.TEMPLE.z;
-
-    // Create a temple structure (two rows of columns)
-    for (let i = 0; i < 5; i++) {
-      positions.push([tx - 6 + i * 3, 0, tz - 4]);
-      positions.push([tx - 6 + i * 3, 0, tz + 4]);
-    }
-    return positions;
-  }, []);
-
-  // Bushes scattered for extra greenery
   const bushes = useMemo(() => {
-    const positions: [number, number, number][] = [];
-    for (let i = 0; i < 80; i++) {
-      const seed = i * 73.7 + 500;
-      const angle = seededRandom(seed) * Math.PI * 2;
-      const radius = 5 + seededRandom(seed + 1) * 50;
-      const x = Math.cos(angle) * radius;
-      const z = Math.sin(angle) * radius;
-
-      // Skip if too close to road, building, or if underwater
-      const height = getTerrainHeight(x, z);
-      if (isNearRoad(x, z) || isNearBuilding(x, z) || height < 0.5) continue;
-
-      // Skip if near island edge
-      const edgeCheck = 1.0;
-      const minSurroundingHeight = Math.min(
-        getTerrainHeight(x + edgeCheck, z),
-        getTerrainHeight(x - edgeCheck, z),
-        getTerrainHeight(x, z + edgeCheck),
-        getTerrainHeight(x, z - edgeCheck)
-      );
-      if (minSurroundingHeight < 1.0) continue;
-
-      positions.push([x, 0, z]);
+    // Use cached positions from collision detection (already computed)
+    if (!cachedBushPositions) {
+      cachedBushPositions = generateBushPositions();
     }
-    return positions;
+    return cachedBushPositions.map(b => [b.x, 0, b.z] as [number, number, number]);
   }, []);
 
   return (
     <group>
       {/* Buildings */}
-      {buildings.map((b, i) => (
+      {BUILDING_DATA.map((b, i) => (
         <GreekBuilding
           key={`building-${i}`}
           position={b.pos}
@@ -671,7 +626,7 @@ export function Buildings() {
       ))}
 
       {/* Temple Columns */}
-      {columns.map((pos, i) => (
+      {COLUMN_POSITIONS.map((pos, i) => (
         <Column key={`column-${i}`} position={pos} />
       ))}
 
