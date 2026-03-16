@@ -1,6 +1,7 @@
 import { Terrain } from './Terrain';
 import { Water } from './Water';
 import { Buildings } from './Buildings';
+import { ChessTable, CHESS_TABLES } from './ChessTable';
 
 export function World() {
   return (
@@ -13,6 +14,11 @@ export function World() {
 
       {/* Santorini-style Buildings */}
       <Buildings />
+
+      {/* Chess Tables - spread across the area */}
+      {CHESS_TABLES.map((table) => (
+        <ChessTable key={table.id} tableId={table.id} position={table} />
+      ))}
     </group>
   );
 }

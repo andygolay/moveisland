@@ -6,6 +6,7 @@ import { Avatar } from './Avatar';
 import { CameraController } from './CameraController';
 import { PlayerController } from './PlayerController';
 import { OtherPlayers } from './OtherPlayers';
+import { ChessGameCamera } from './ChessGameView';
 
 export function Scene() {
   return (
@@ -54,6 +55,7 @@ export function Scene() {
         {/* Controllers */}
         <PlayerController />
         <CameraController />
+        <ChessGameCamera />
       </Suspense>
     </Canvas>
   );

@@ -1,7 +1,10 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { usePlayerStore } from '../stores/playerStore';
 import { getTerrainHeight, LOCATIONS } from './Terrain';
+import { getTreeCollisionData, getBushCollisionData } from './Buildings';
+import { CHESS_TABLES, CHESS_INTERACTION_RADIUS } from './ChessTable';
+import { useChessStore } from '../stores/chessStore';
 import { sendPosition } from '../multiplayer/socket';
 
 // Movement settings
@@ -114,6 +117,70 @@ function getBuildingRoofHeight(x: number, z: number): number {
   return 0; // Not on any building
 }
 
+// Check collision with vegetation (trees and bushes)
+// Only collide with tree trunks when below the canopy top
+function checkVegetationCollision(
+  x: number,
+  z: number,
+  y: number,
+  playerRadius: number,
+  treeData: { x: number; z: number; radius: number; topHeight: number; canopyRadius: number }[],
+  bushData: { x: number; z: number; radius: number }[]
+): { collides: boolean; pushX: number; pushZ: number } {
+  // Check trees - only collide when below tree top
+  for (const tree of treeData) {
+    const dx = x - tree.x;
+    const dz = z - tree.z;
+    const distance = Math.sqrt(dx * dx + dz * dz);
+    const minDist = tree.radius + playerRadius;
+
+    // Only block if player is below the tree top (with small tolerance)
+    if (distance < minDist && distance > 0.01 && y < tree.topHeight - 0.2) {
+      // Calculate push direction
+      const overlap = minDist - distance;
+      const pushX = (dx / distance) * overlap;
+      const pushZ = (dz / distance) * overlap;
+      return { collides: true, pushX, pushZ };
+    }
+  }
+
+  // Check bushes (always collide - can't stand on bushes)
+  for (const bush of bushData) {
+    const dx = x - bush.x;
+    const dz = z - bush.z;
+    const distance = Math.sqrt(dx * dx + dz * dz);
+    const minDist = bush.radius + playerRadius;
+
+    if (distance < minDist && distance > 0.01) {
+      const overlap = minDist - distance;
+      const pushX = (dx / distance) * overlap;
+      const pushZ = (dz / distance) * overlap;
+      return { collides: true, pushX, pushZ };
+    }
+  }
+
+  return { collides: false, pushX: 0, pushZ: 0 };
+}
+
+// Get the height of any tree canopy the player is standing on
+function getTreeTopHeight(
+  x: number,
+  z: number,
+  treeData: { x: number; z: number; radius: number; topHeight: number; canopyRadius: number }[]
+): number {
+  for (const tree of treeData) {
+    const dx = x - tree.x;
+    const dz = z - tree.z;
+    const distance = Math.sqrt(dx * dx + dz * dz);
+
+    // Check if within the canopy radius (walkable area on top of tree)
+    if (distance < tree.canopyRadius) {
+      return tree.topHeight;
+    }
+  }
+  return 0; // Not on any tree
+}
+
 // Input state
 const keys: Record<string, boolean> = {};
 
@@ -131,29 +198,66 @@ export function PlayerController() {
     setCurrentAnimation,
   } = usePlayerStore();
 
+  // Cache vegetation collision data (computed once)
+  const treeCollisionData = useMemo(() => getTreeCollisionData(), []);
+  const bushCollisionData = useMemo(() => getBushCollisionData(), []);
+
+  // Chess table proximity
+  const { setIsNearTable, setActiveTableId, isInChessView } = useChessStore();
+  const wasNearTable = useRef(false);
+  const nearTableId = useRef<string | null>(null);
+
   // Handle key down
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Ignore movement keys while Command is held (prevents stuck keys)
+    if (e.metaKey) return;
     keys[e.code] = true;
   }, []);
 
   // Handle key up
   const handleKeyUp = useCallback((e: KeyboardEvent) => {
     keys[e.code] = false;
+
+    // When Command is released, clear all movement keys
+    // (browser often doesn't fire keyup for keys held during Command shortcuts)
+    if (e.code === 'MetaLeft' || e.code === 'MetaRight') {
+      keys['KeyW'] = false;
+      keys['KeyA'] = false;
+      keys['KeyS'] = false;
+      keys['KeyD'] = false;
+      keys['ArrowUp'] = false;
+      keys['ArrowDown'] = false;
+      keys['ArrowLeft'] = false;
+      keys['ArrowRight'] = false;
+      keys['Space'] = false;
+    }
+  }, []);
+
+  // Handle window blur (clears all keys when switching apps/tabs)
+  const handleBlur = useCallback(() => {
+    Object.keys(keys).forEach(key => {
+      keys[key] = false;
+    });
   }, []);
 
   // Set up event listeners
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
     };
-  }, [handleKeyDown, handleKeyUp]);
+  }, [handleKeyDown, handleKeyUp, handleBlur]);
 
   // Update movement each frame
   useFrame((_, delta) => {
+    // Don't process movement if in chess view
+    if (isInChessView) return;
+
     // Clamp delta to prevent huge jumps
     const dt = Math.min(delta, 0.1);
 
@@ -298,15 +402,35 @@ export function PlayerController() {
       }
     }
 
+    // Vegetation collision detection (trees and bushes)
+    // Pass Y position so we can walk on top of trees
+    const vegCollision = checkVegetationCollision(
+      newPosition.x,
+      newPosition.z,
+      newPosition.y,
+      0.4, // Player radius for vegetation
+      treeCollisionData,
+      bushCollisionData
+    );
+
+    if (vegCollision.collides) {
+      // Push player away from vegetation
+      newPosition.x += vegCollision.pushX;
+      newPosition.z += vegCollision.pushZ;
+    }
+
     // Get terrain height at (possibly reverted) position
     const finalTerrainHeight = getTerrainHeight(newPosition.x, newPosition.z);
 
     // Check if standing on a building roof
     const roofHeight = getBuildingRoofHeight(newPosition.x, newPosition.z);
 
-    // Ground collision - use the higher of terrain or building roof
+    // Check if standing on a tree canopy
+    const treeTopHeight = getTreeTopHeight(newPosition.x, newPosition.z, treeCollisionData);
+
+    // Ground collision - use the highest of terrain, building roof, or tree top
     // Add small offset (0.1) to account for terrain mesh interpolation differences
-    const groundLevel = Math.max(finalTerrainHeight, roofHeight) + 0.1;
+    const groundLevel = Math.max(finalTerrainHeight, roofHeight, treeTopHeight) + 0.1;
 
     // Always ensure player is at or above ground level
     // This handles both landing from jumps and walking up hills
@@ -340,6 +464,31 @@ export function PlayerController() {
         ? currentAnim
         : 'idle'
     );
+
+    // Check proximity to any chess table
+    let closestTable: { id: string; distance: number } | null = null;
+    for (const table of CHESS_TABLES) {
+      const dist = Math.sqrt(
+        (newPosition.x - table.x) ** 2 +
+        (newPosition.z - table.z) ** 2
+      );
+      if (dist < CHESS_INTERACTION_RADIUS) {
+        if (!closestTable || dist < closestTable.distance) {
+          closestTable = { id: table.id, distance: dist };
+        }
+      }
+    }
+
+    const isNearChessTable = closestTable !== null;
+    const currentNearTableId = closestTable?.id ?? null;
+
+    // Only update if changed (avoid unnecessary re-renders)
+    if (isNearChessTable !== wasNearTable.current || currentNearTableId !== nearTableId.current) {
+      wasNearTable.current = isNearChessTable;
+      nearTableId.current = currentNearTableId;
+      setIsNearTable(isNearChessTable);
+      setActiveTableId(currentNearTableId);
+    }
   });
 
   return null;

@@ -5,6 +5,14 @@ import type {
   ServerMessage,
   JoinMessage,
   PositionMessage,
+  ChessJoinMessage,
+  ChessLeaveMessage,
+  ChessWatchMessage,
+  ChessStopWatchingMessage,
+  ChessSetGameIdMessage,
+  ChessState,
+  ChessPlayer,
+  ChessSpectator,
 } from "./types";
 
 // Zone size for spatial partitioning
@@ -25,7 +33,24 @@ function getAdjacentZones(zone: string): string[] {
   return zones;
 }
 
+// Table IDs must match the client CHESS_TABLES
+const TABLE_IDS = ['table-1', 'table-2', 'table-3'];
+
+function createEmptyChessState(): ChessState {
+  return {
+    status: 'empty',
+    player1: null,
+    player2: null,
+    spectators: [],
+  };
+}
+
 export default class MoveIslandServer implements Party.Server {
+  // Chess game state per table
+  private chessTables: Map<string, ChessState> = new Map(
+    TABLE_IDS.map(id => [id, createEmptyChessState()])
+  );
+
   constructor(readonly room: Party.Room) {}
 
   // Get player state from connection
@@ -91,6 +116,21 @@ export default class MoveIslandServer implements Party.Server {
         case "position":
           this.handlePosition(sender, data);
           break;
+        case "chessJoin":
+          this.handleChessJoin(sender, data);
+          break;
+        case "chessLeave":
+          this.handleChessLeave(sender, data);
+          break;
+        case "chessWatch":
+          this.handleChessWatch(sender, data);
+          break;
+        case "chessStopWatching":
+          this.handleChessStopWatching(sender, data);
+          break;
+        case "chessSetGameId":
+          this.handleChessSetGameId(sender, data);
+          break;
       }
     } catch (error) {
       console.error("Failed to parse message:", error);
@@ -125,6 +165,16 @@ export default class MoveIslandServer implements Party.Server {
     };
     conn.send(JSON.stringify(playersMsg));
 
+    // Send all chess table states to new player
+    for (const [tableId, state] of this.chessTables) {
+      const chessMsg: ServerMessage = {
+        type: 'chessState',
+        tableId,
+        state,
+      };
+      conn.send(JSON.stringify(chessMsg));
+    }
+
     // Notify other players about new player
     const joinedMsg: ServerMessage = {
       type: "playerJoined",
@@ -158,12 +208,165 @@ export default class MoveIslandServer implements Party.Server {
     this.broadcastToZone(updateMsg, getZone(player.x, player.z), conn.id);
   }
 
+  private handleChessJoin(conn: Party.Connection, data: ChessJoinMessage) {
+    const { tableId, player } = data;
+    const chessState = this.chessTables.get(tableId);
+    if (!chessState) return;
+
+    const connPlayer = this.getPlayer(conn);
+
+    if (!chessState.player1) {
+      // First player joins as white
+      chessState.player1 = { ...player, side: 'white' };
+      chessState.status = 'waiting';
+      // Store the chess info on the connection for cleanup on disconnect
+      if (connPlayer) {
+        connPlayer.chessOdId = player.odId;
+        connPlayer.chessTableId = tableId;
+        this.setPlayer(conn, connPlayer);
+      }
+    } else if (!chessState.player2 && chessState.player1.odId !== player.odId) {
+      // Second player joins as black
+      chessState.player2 = { ...player, side: 'black' };
+      chessState.status = 'playing';
+      // Store the chess info on the connection for cleanup on disconnect
+      if (connPlayer) {
+        connPlayer.chessOdId = player.odId;
+        connPlayer.chessTableId = tableId;
+        this.setPlayer(conn, connPlayer);
+      }
+    }
+
+    // Broadcast updated state to all players
+    this.broadcastChessState(tableId);
+  }
+
+  private handleChessLeave(conn: Party.Connection, data: ChessLeaveMessage) {
+    const { tableId, odId } = data;
+    const chessState = this.chessTables.get(tableId);
+    if (!chessState) return;
+
+    if (chessState.player1?.odId === odId) {
+      if (chessState.player2) {
+        // Player 2 becomes player 1
+        chessState.player1 = { ...chessState.player2, side: 'white' };
+        chessState.player2 = null;
+        chessState.status = 'waiting';
+      } else {
+        chessState.player1 = null;
+        chessState.status = 'empty';
+        chessState.gameId = undefined; // Clear game ID when table is empty
+      }
+    } else if (chessState.player2?.odId === odId) {
+      chessState.player2 = null;
+      chessState.status = 'waiting';
+    }
+
+    // Broadcast updated state to all players
+    this.broadcastChessState(tableId);
+  }
+
+  private handleChessWatch(conn: Party.Connection, data: ChessWatchMessage) {
+    const { tableId, spectator } = data;
+    const chessState = this.chessTables.get(tableId);
+    if (!chessState) return;
+
+    // Add spectator if not already watching
+    if (!chessState.spectators.find(s => s.odId === spectator.odId)) {
+      chessState.spectators.push(spectator);
+
+      const connPlayer = this.getPlayer(conn);
+      if (connPlayer) {
+        connPlayer.chessOdId = spectator.odId;
+        connPlayer.chessTableId = tableId;
+        connPlayer.isSpectating = true;
+        this.setPlayer(conn, connPlayer);
+      }
+
+      this.broadcastChessState(tableId);
+    }
+  }
+
+  private handleChessStopWatching(conn: Party.Connection, data: ChessStopWatchingMessage) {
+    const { tableId, odId } = data;
+    const chessState = this.chessTables.get(tableId);
+    if (!chessState) return;
+
+    chessState.spectators = chessState.spectators.filter(s => s.odId !== odId);
+    this.broadcastChessState(tableId);
+  }
+
+  private handleChessSetGameId(conn: Party.Connection, data: ChessSetGameIdMessage) {
+    const { tableId, gameId } = data;
+    const chessState = this.chessTables.get(tableId);
+    if (!chessState) return;
+
+    chessState.gameId = gameId;
+    console.log(`Chess: Game ID set to ${gameId} for table ${tableId}`);
+    this.broadcastChessState(tableId);
+  }
+
+  private broadcastChessState(tableId: string) {
+    const chessState = this.chessTables.get(tableId);
+    if (!chessState) return;
+
+    const msg: ServerMessage = {
+      type: 'chessState',
+      tableId,
+      state: chessState,
+    };
+    const json = JSON.stringify(msg);
+
+    for (const conn of this.room.getConnections()) {
+      conn.send(json);
+    }
+  }
+
   onClose(conn: Party.Connection) {
     const player = this.getPlayer(conn);
     if (player) {
       console.log(`Player left: ${player.id}`);
 
-      // Notify other players
+      // Clean up chess state if this player was in a chess game
+      const chessOdId = player.chessOdId;
+      const chessTableId = player.chessTableId;
+
+      if (chessOdId && chessTableId) {
+        const chessState = this.chessTables.get(chessTableId);
+        if (chessState) {
+          let changed = false;
+
+          if (player.isSpectating) {
+            // Remove from spectators
+            chessState.spectators = chessState.spectators.filter(s => s.odId !== chessOdId);
+            changed = true;
+            console.log(`Chess: Spectator left (${chessOdId}) from ${chessTableId}`);
+          } else if (chessState.player1?.odId === chessOdId) {
+            if (chessState.player2) {
+              chessState.player1 = { ...chessState.player2, side: 'white' };
+              chessState.player2 = null;
+              chessState.status = 'waiting';
+            } else {
+              chessState.player1 = null;
+              chessState.status = 'empty';
+              chessState.gameId = undefined; // Clear game ID when table is empty
+            }
+            changed = true;
+            console.log(`Chess: Player 1 left (${chessOdId}) from ${chessTableId}, status now: ${chessState.status}`);
+          } else if (chessState.player2?.odId === chessOdId) {
+            chessState.player2 = null;
+            chessState.status = 'waiting';
+            changed = true;
+            console.log(`Chess: Player 2 left (${chessOdId}) from ${chessTableId}, status now: ${chessState.status}`);
+          }
+
+          if (changed) {
+            this.broadcastChessState(chessTableId);
+          }
+        }
+      }
+
+      // Notify other players about general departure
       const leftMsg: ServerMessage = {
         type: "playerLeft",
         playerId: player.id,

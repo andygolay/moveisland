@@ -4,6 +4,8 @@ import { WalletConnect } from './components/WalletConnect';
 import { NFTSelector } from './components/NFTSelector';
 import { HUD } from './components/HUD';
 import { HintOverlay } from './components/HintOverlay';
+import { ChessPrompt } from './components/ChessPrompt';
+import { ChessGameOverlay } from './game/ChessGameView';
 import { Scene } from './game/Scene';
 import { MultiplayerManager } from './game/MultiplayerManager';
 import './App.css';
@@ -23,6 +25,8 @@ function GameContent() {
           <Scene />
           <HUD />
           <HintOverlay />
+          <ChessPrompt />
+          <ChessGameOverlay />
         </>
       );
     default:

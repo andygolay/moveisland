@@ -1,5 +1,6 @@
 import PartySocket from 'partysocket';
 import { useMultiplayerStore, type OtherPlayer } from '../stores/multiplayerStore';
+import { useChessStore, type ChessPlayer, type ChessSpectator, type ChessGameStatus } from '../stores/chessStore';
 import type { PlayerAnimation } from '../stores/playerStore';
 
 // Server configuration
@@ -38,7 +39,19 @@ interface PlayerLeftMessage {
   playerId: string;
 }
 
-type ServerMessage = PlayersMessage | PlayerJoinedMessage | PlayerLeftMessage;
+interface ChessStateMessage {
+  type: 'chessState';
+  tableId: string;
+  state: {
+    status: ChessGameStatus;
+    player1: ChessPlayer | null;
+    player2: ChessPlayer | null;
+    spectators: ChessSpectator[];
+    gameId?: number;
+  };
+}
+
+type ServerMessage = PlayersMessage | PlayerJoinedMessage | PlayerLeftMessage | ChessStateMessage;
 
 // Singleton socket instance
 let socket: PartySocket | null = null;
@@ -93,6 +106,18 @@ export function connectToServer(
         case 'playerLeft':
           removePlayer(data.playerId);
           console.log('[Multiplayer] Player left:', data.playerId);
+          break;
+        case 'chessState':
+          // Update chess store with server state for this table
+          const chessStore = useChessStore.getState();
+          chessStore.updateTableState(data.tableId, {
+            status: data.state.status,
+            player1: data.state.player1,
+            player2: data.state.player2,
+            spectators: data.state.spectators || [],
+            gameId: data.state.gameId,
+          });
+          console.log('[Multiplayer] Chess state updated:', data.tableId, data.state.status, 'gameId:', data.state.gameId);
           break;
       }
     } catch (error) {
@@ -149,4 +174,70 @@ export function sendPosition(
 
 export function getSocket(): PartySocket | null {
   return socket;
+}
+
+// Chess game functions
+export function sendChessJoin(player: ChessPlayer & { tableId: string }) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+  const msg = {
+    type: 'chessJoin',
+    tableId: player.tableId,
+    player: {
+      odId: player.odId,
+      displayName: player.displayName,
+      nftImageUrl: player.nftImageUrl,
+      side: player.side,
+    },
+  };
+  socket.send(JSON.stringify(msg));
+}
+
+export function sendChessLeave(odId: string, tableId: string) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+  const msg = {
+    type: 'chessLeave',
+    tableId,
+    odId,
+  };
+  socket.send(JSON.stringify(msg));
+}
+
+// Spectator functions
+export function sendChessWatch(spectator: ChessSpectator & { tableId: string }) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+  const msg = {
+    type: 'chessWatch',
+    tableId: spectator.tableId,
+    spectator: {
+      odId: spectator.odId,
+      displayName: spectator.displayName,
+      nftImageUrl: spectator.nftImageUrl,
+    },
+  };
+  socket.send(JSON.stringify(msg));
+}
+
+export function sendChessStopWatching(odId: string, tableId: string) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+  const msg = {
+    type: 'chessStopWatching',
+    tableId,
+    odId,
+  };
+  socket.send(JSON.stringify(msg));
+}
+
+export function sendChessSetGameId(tableId: string, gameId: number) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+  const msg = {
+    type: 'chessSetGameId',
+    tableId,
+    gameId,
+  };
+  socket.send(JSON.stringify(msg));
 }

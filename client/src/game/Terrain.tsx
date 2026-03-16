@@ -148,7 +148,7 @@ export function Terrain() {
   // Create geometry only once
   const { geometry } = useMemo(() => {
     const size = 150;
-    const segments = 100;
+    const segments = 200; // Higher resolution for accurate tree placement
     const geo = new THREE.PlaneGeometry(size, size, segments, segments);
 
     // Rotate to be horizontal

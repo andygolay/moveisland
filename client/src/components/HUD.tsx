@@ -5,7 +5,7 @@ import './HUD.css';
 
 export function HUD() {
   const { account, disconnect } = useWallet();
-  const { selectedNFT, setScreen, setSelectedNFT } = useGameStore();
+  const { selectedNFT, displayName, setScreen, setSelectedNFT } = useGameStore();
 
   const handleExit = () => {
     setScreen('select-nft');
@@ -19,7 +19,7 @@ export function HUD() {
           <div className="player-info">
             <img src={selectedNFT.imageUrl} alt={selectedNFT.name} className="avatar-preview" />
             <div className="player-details">
-              <p className="player-name">{selectedNFT.name}</p>
+              <p className="player-name">{displayName || selectedNFT.name}</p>
               <p className="player-wallet">
                 {account ? formatAddress(account.address.toString()) : 'Not connected'}
               </p>
