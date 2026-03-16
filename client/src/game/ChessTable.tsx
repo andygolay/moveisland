@@ -15,11 +15,10 @@ export const CHESS_TABLE_POSITION = CHESS_TABLES[0];
 export const CHESS_INTERACTION_RADIUS = 3;
 
 interface ChessTableProps {
-  tableId?: string;
   position?: { x: number; z: number };
 }
 
-export function ChessTable({ tableId, position }: ChessTableProps = {}) {
+export function ChessTable({ position }: ChessTableProps = {}) {
   const tablePos = position || CHESS_TABLES[0];
   const groundY = getTerrainHeight(tablePos.x, tablePos.z);
 

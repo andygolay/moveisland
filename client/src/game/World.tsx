@@ -17,7 +17,7 @@ export function World() {
 
       {/* Chess Tables - spread across the area */}
       {CHESS_TABLES.map((table) => (
-        <ChessTable key={table.id} tableId={table.id} position={table} />
+        <ChessTable key={table.id} position={table} />
       ))}
     </group>
   );
