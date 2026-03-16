@@ -194,7 +194,7 @@ function getTerrainHeight(x: number, z: number): number {
 // Pre-compute terrain geometry at module level to avoid blocking render
 function createTerrainGeometry(): THREE.PlaneGeometry {
   const size = 150;
-  const segments = 64; // Reduced for faster load - 4k vertices vs 40k
+  const segments = 200; // Higher resolution for accurate tree placement (40k vertices)
   const geo = new THREE.PlaneGeometry(size, size, segments, segments);
 
   // Rotate to be horizontal

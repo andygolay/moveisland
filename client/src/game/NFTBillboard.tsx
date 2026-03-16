@@ -1,7 +1,10 @@
-import { useRef, useEffect, Suspense, useMemo } from 'react';
+import { useRef, useEffect, Suspense, useMemo, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
+
+// Timeout for slow image loads (5 seconds)
+const IMAGE_LOAD_TIMEOUT = 5000;
 
 // Shader for rounded corners
 const roundedVertexShader = `
@@ -50,10 +53,12 @@ function NFTBillboardWithTexture({
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
 
-  // Handle IPFS URLs
+  // Handle IPFS URLs - use fast gateway (cloudflare is much faster than ipfs.io)
   let url = imageUrl;
   if (url.startsWith('ipfs://')) {
-    url = url.replace('ipfs://', 'https://ipfs.io/ipfs/');
+    url = url.replace('ipfs://', 'https://cloudflare-ipfs.com/ipfs/');
+  } else if (url.includes('ipfs.io/ipfs/')) {
+    url = url.replace('ipfs.io/ipfs/', 'cloudflare-ipfs.com/ipfs/');
   }
 
   // Use drei's useTexture hook for better loading
@@ -178,8 +183,19 @@ export function NFTBillboard({
   size = 1.0,
   heightOffset = 1.2,
 }: NFTBillboardProps) {
-  // If no URL, show placeholder
-  if (!imageUrl || imageUrl.trim() === '') {
+  const [timedOut, setTimedOut] = useState(false);
+
+  // Timeout for slow image loads - show placeholder instead of hanging
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTimedOut(true);
+    }, IMAGE_LOAD_TIMEOUT);
+
+    return () => clearTimeout(timer);
+  }, [imageUrl]);
+
+  // If no URL or timed out, show placeholder
+  if (!imageUrl || imageUrl.trim() === '' || timedOut) {
     return <NFTPlaceholder size={size} heightOffset={heightOffset} />;
   }
 
