@@ -1,6 +1,8 @@
 import { Terrain } from './Terrain';
 import { Water } from './Water';
 import { Buildings } from './Buildings';
+import { Vegetation } from './Vegetation';
+import { Landmarks } from './Landmarks';
 import { ChessTable, CHESS_TABLES } from './ChessTable';
 
 export function World() {
@@ -15,7 +17,13 @@ export function World() {
       {/* Santorini-style Buildings */}
       <Buildings />
 
-      {/* Chess Tables - spread across the area */}
+      {/* Trees and Bushes */}
+      <Vegetation />
+
+      {/* Columns and Plaza */}
+      <Landmarks />
+
+      {/* Chess Tables */}
       {CHESS_TABLES.map((table) => (
         <ChessTable key={table.id} position={table} />
       ))}
