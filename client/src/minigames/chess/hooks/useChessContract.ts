@@ -44,7 +44,7 @@ export interface Challenge {
   max_rating: number;
 }
 
-// Create a Movement client configured for testnet
+// Create a Movement client configured for mainnet
 const movementConfig = new MovementConfig({
   network: Network.CUSTOM,
   fullnode: MOVEMENT_NODE_URL,
