@@ -34,25 +34,6 @@ const roundedFragmentShader = `
   }
 `;
 
-// Shader for rounded placeholder (solid color)
-const placeholderFragmentShader = `
-  uniform vec3 color;
-  uniform float radius;
-  varying vec2 vUv;
-
-  void main() {
-    vec2 uv = vUv;
-    vec2 center = vec2(0.5, 0.5);
-    vec2 pos = abs(uv - center);
-    vec2 corner = vec2(0.5 - radius, 0.5 - radius);
-
-    float dist = length(max(pos - corner, 0.0));
-    float alpha = 1.0 - smoothstep(radius - 0.02, radius, dist);
-
-    gl_FragColor = vec4(color, alpha);
-  }
-`;
-
 interface NFTBillboardProps {
   imageUrl: string;
   size?: number;
