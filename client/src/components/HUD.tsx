@@ -1,11 +1,19 @@
+import { useState, useEffect } from 'react';
 import { useWallet } from '@moveindustries/wallet-adapter-react';
 import { useGameStore } from '../stores/gameStore';
 import { formatAddress } from '../blockchain/wallet';
+import { subscribeToNFTLoadStatus, retryNFTLoad } from '../game/NFTBillboard';
 import './HUD.css';
 
 export function HUD() {
   const { account, disconnect } = useWallet();
   const { selectedNFT, displayName, setScreen, setSelectedNFT } = useGameStore();
+  const [nftLoadStatus, setNftLoadStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
+
+  // Subscribe to NFT load status
+  useEffect(() => {
+    return subscribeToNFTLoadStatus(setNftLoadStatus);
+  }, []);
 
   const handleExit = () => {
     setScreen('select-nft');
@@ -58,6 +66,21 @@ export function HUD() {
           <span>MOVELand - Agora</span>
         </div>
       </div>
+
+      {/* NFT Load Error - Retry button */}
+      {nftLoadStatus === 'error' && (
+        <div className="hud-nft-error">
+          <div className="nft-error-content">
+            <span>Avatar image failed to load</span>
+            <button
+              className="hud-button retry"
+              onClick={() => retryNFTLoad()}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

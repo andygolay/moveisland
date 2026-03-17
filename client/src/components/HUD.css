@@ -145,6 +145,36 @@
   font-size: 16px;
 }
 
+/* NFT Load Error Banner */
+.hud-nft-error {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.nft-error-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: rgba(220, 53, 69, 0.9);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  color: white;
+  font-size: 14px;
+}
+
+.hud-button.retry {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 13px;
+}
+
+.hud-button.retry:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .controls-hint {
