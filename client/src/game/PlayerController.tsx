@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { usePlayerStore } from '../stores/playerStore';
 import { getTerrainHeight, LOCATIONS } from './Terrain';
 import { getTreeCollisionData, getBushCollisionData } from './Buildings';
-import { CHESS_TABLES, CHESS_INTERACTION_RADIUS } from './ChessTable';
+import { CHESS_TABLES, CHESS_INTERACTION_RADIUS, getChessTableCollisions, getSeatPosition } from './ChessTable';
 import { useChessStore } from '../stores/chessStore';
 import { sendPosition } from '../multiplayer/socket';
 
@@ -181,6 +181,29 @@ function getTreeTopHeight(
   return 0; // Not on any tree
 }
 
+// Check collision with chess tables and seats
+function checkChessTableCollision(
+  x: number,
+  z: number,
+  playerRadius: number,
+  tableCollisions: { x: number; z: number; radius: number }[]
+): { collides: boolean; pushX: number; pushZ: number } {
+  for (const obstacle of tableCollisions) {
+    const dx = x - obstacle.x;
+    const dz = z - obstacle.z;
+    const distance = Math.sqrt(dx * dx + dz * dz);
+    const minDist = obstacle.radius + playerRadius;
+
+    if (distance < minDist && distance > 0.01) {
+      const overlap = minDist - distance;
+      const pushX = (dx / distance) * overlap;
+      const pushZ = (dz / distance) * overlap;
+      return { collides: true, pushX, pushZ };
+    }
+  }
+  return { collides: false, pushX: 0, pushZ: 0 };
+}
+
 // Input state
 const keys: Record<string, boolean> = {};
 
@@ -198,14 +221,37 @@ export function PlayerController() {
     setCurrentAnimation,
   } = usePlayerStore();
 
-  // Cache vegetation collision data (computed once)
+  // Cache collision data (computed once)
   const treeCollisionData = useMemo(() => getTreeCollisionData(), []);
   const bushCollisionData = useMemo(() => getBushCollisionData(), []);
+  const chessTableCollisionData = useMemo(() => getChessTableCollisions(), []);
 
-  // Chess table proximity
-  const { setIsNearTable, setActiveTableId, isInChessView } = useChessStore();
+  // Chess table proximity and seating
+  const { setIsNearTable, setActiveTableId, isInChessView, localPlayerSide, activeTableId } = useChessStore();
   const wasNearTable = useRef(false);
   const nearTableId = useRef<string | null>(null);
+
+  // Get seated state
+  const { isSeated, sitDown, standUp } = usePlayerStore();
+
+  // Handle sitting/standing when entering/leaving chess view
+  useEffect(() => {
+    if (isInChessView && localPlayerSide && activeTableId && !isSeated) {
+      // Player is entering chess view - sit them down
+      const seatPos = getSeatPosition(activeTableId, localPlayerSide);
+      if (seatPos) {
+        sitDown({
+          tableId: activeTableId,
+          side: localPlayerSide,
+          position: { x: seatPos.x, y: seatPos.y, z: seatPos.z },
+          rotation: seatPos.rotation,
+        });
+      }
+    } else if (!isInChessView && isSeated) {
+      // Player is leaving chess view - stand them up
+      standUp();
+    }
+  }, [isInChessView, localPlayerSide, activeTableId, isSeated, sitDown, standUp]);
 
   // Handle key down
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -419,6 +465,20 @@ export function PlayerController() {
       newPosition.z += vegCollision.pushZ;
     }
 
+    // Chess table collision detection
+    const tableCollision = checkChessTableCollision(
+      newPosition.x,
+      newPosition.z,
+      0.4, // Player radius for tables
+      chessTableCollisionData
+    );
+
+    if (tableCollision.collides) {
+      // Push player away from table/seat
+      newPosition.x += tableCollision.pushX;
+      newPosition.z += tableCollision.pushZ;
+    }
+
     // Get terrain height at (possibly reverted) position
     const finalTerrainHeight = getTerrainHeight(newPosition.x, newPosition.z);
 
@@ -460,7 +520,7 @@ export function PlayerController() {
       newPosition.y,
       newPosition.z,
       currentRotation,
-      currentAnim === 'idle' || currentAnim === 'walk' || currentAnim === 'run'
+      currentAnim === 'idle' || currentAnim === 'walk' || currentAnim === 'run' || currentAnim === 'sitting'
         ? currentAnim
         : 'idle'
     );

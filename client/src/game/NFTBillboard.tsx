@@ -283,32 +283,65 @@ function NFTBillboardWithTexture({
   );
 }
 
+// Create a canvas texture with text
+function createTextTexture(text: string, bgColor: string, textColor: string): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d')!;
+
+  // Rounded rectangle background
+  const radius = 30;
+  ctx.fillStyle = bgColor;
+  ctx.beginPath();
+  ctx.roundRect(10, 10, 236, 236, radius);
+  ctx.fill();
+
+  // Text
+  ctx.fillStyle = textColor;
+  ctx.font = 'bold 28px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 128, 128);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
+
 // Placeholder while loading or on error
 function NFTPlaceholder({
   size,
   heightOffset,
   isError = false,
+  isLoading = false,
 }: {
   size: number;
   heightOffset: number;
   isError?: boolean;
+  isLoading?: boolean;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
 
-  const shaderMaterial = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        // Yellow for loading, orange-red for error
-        color: { value: new THREE.Color(isError ? '#FF6B6B' : '#FFD93D') },
-        radius: { value: 0.15 },
-      },
-      vertexShader: roundedVertexShader,
-      fragmentShader: placeholderFragmentShader,
+  // Create texture with appropriate text
+  const texture = useMemo(() => {
+    if (isError) {
+      return createTextTexture('Error', '#FF6B6B', '#FFFFFF');
+    } else if (isLoading) {
+      return createTextTexture('Loading...', '#3A3A4A', '#AAAAAA');
+    } else {
+      return createTextTexture('No Image', '#FFD93D', '#333333');
+    }
+  }, [isError, isLoading]);
+
+  const material = useMemo(() => {
+    return new THREE.MeshBasicMaterial({
+      map: texture,
       transparent: true,
       side: THREE.DoubleSide,
     });
-  }, [isError]);
+  }, [texture]);
 
   useFrame(() => {
     if (meshRef.current) {
@@ -326,7 +359,7 @@ function NFTPlaceholder({
 
   return (
     <group position={[0, heightOffset, 0]}>
-      <mesh ref={meshRef} castShadow material={shaderMaterial}>
+      <mesh ref={meshRef} castShadow material={material}>
         <planeGeometry args={[size, size]} />
       </mesh>
     </group>
@@ -468,9 +501,9 @@ export function NFTBillboard({
         onLoadError={handleLoadError}
         onLoadSuccess={handleLoadSuccess}
       />
-      {/* Show placeholder while loading */}
+      {/* Show loading placeholder while image loads */}
       {status === 'loading' && (
-        <NFTPlaceholder size={size} heightOffset={heightOffset} />
+        <NFTPlaceholder size={size} heightOffset={heightOffset} isLoading />
       )}
     </TextureErrorBoundary>
   );

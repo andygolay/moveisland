@@ -1,7 +1,14 @@
 import { create } from 'zustand';
 import * as THREE from 'three';
 
-export type PlayerAnimation = 'idle' | 'walk' | 'run' | 'jump' | 'wave' | 'dance';
+export type PlayerAnimation = 'idle' | 'walk' | 'run' | 'jump' | 'wave' | 'dance' | 'sitting';
+
+interface SeatedInfo {
+  tableId: string;
+  side: 'white' | 'black';
+  position: { x: number; y: number; z: number };
+  rotation: number;
+}
 
 interface PlayerState {
   // Position and rotation
@@ -17,6 +24,10 @@ interface PlayerState {
   // Animation
   currentAnimation: PlayerAnimation;
 
+  // Seated state (for chess)
+  isSeated: boolean;
+  seatedInfo: SeatedInfo | null;
+
   // Actions
   setPosition: (pos: THREE.Vector3) => void;
   setRotation: (rot: number) => void;
@@ -25,6 +36,8 @@ interface PlayerState {
   setIsJumping: (jumping: boolean) => void;
   setMoveDirection: (dir: { x: number; z: number }) => void;
   setCurrentAnimation: (anim: PlayerAnimation) => void;
+  sitDown: (info: SeatedInfo) => void;
+  standUp: () => void;
 }
 
 export const usePlayerStore = create<PlayerState>((set) => ({
@@ -39,6 +52,10 @@ export const usePlayerStore = create<PlayerState>((set) => ({
 
   currentAnimation: 'idle',
 
+  // Seated state
+  isSeated: false,
+  seatedInfo: null,
+
   // Actions
   setPosition: (pos) => set({ position: pos }),
   setRotation: (rot) => set({ rotation: rot }),
@@ -47,4 +64,30 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   setIsJumping: (jumping) => set({ isJumping: jumping }),
   setMoveDirection: (dir) => set({ moveDirection: dir }),
   setCurrentAnimation: (anim) => set({ currentAnimation: anim }),
+
+  // Sit down at a chess table
+  sitDown: (info) => set({
+    isSeated: true,
+    seatedInfo: info,
+    position: new THREE.Vector3(info.position.x, info.position.y, info.position.z),
+    rotation: info.rotation,
+    currentAnimation: 'sitting',
+    isMoving: false,
+    velocity: new THREE.Vector3(0, 0, 0),
+  }),
+
+  // Stand up from chess table
+  standUp: () => set((state) => ({
+    isSeated: false,
+    seatedInfo: null,
+    currentAnimation: 'idle',
+    // Move slightly away from the seat
+    position: state.seatedInfo
+      ? new THREE.Vector3(
+          state.seatedInfo.position.x,
+          state.seatedInfo.position.y,
+          state.seatedInfo.position.z + (state.seatedInfo.side === 'white' ? -0.8 : 0.8)
+        )
+      : state.position,
+  })),
 }));

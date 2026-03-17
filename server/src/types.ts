@@ -7,7 +7,7 @@ export interface PlayerState {
   y: number;
   z: number;
   rotation: number;
-  animation: 'idle' | 'walk' | 'run';
+  animation: 'idle' | 'walk' | 'run' | 'sitting';
   // Chess session info (set when player joins chess game or spectates)
   chessOdId?: string;
   chessTableId?: string;
@@ -27,7 +27,7 @@ export interface PositionMessage {
   y: number;
   z: number;
   rotation: number;
-  animation: 'idle' | 'walk' | 'run';
+  animation: 'idle' | 'walk' | 'run' | 'sitting';
 }
 
 export interface PlayersMessage {

@@ -6,23 +6,33 @@ import { usePlayerStore } from '../stores/playerStore';
 interface AvatarBodyProps {
   isWalking?: boolean; // For remote players, pass animation state directly
   isRunning?: boolean; // For remote players, pass running state directly
+  isSitting?: boolean; // For seated position
 }
 
-export function AvatarBody({ isWalking, isRunning }: AvatarBodyProps) {
+export function AvatarBody({ isWalking, isRunning, isSitting }: AvatarBodyProps) {
   const leftLegRef = useRef<THREE.Group>(null);
   const rightLegRef = useRef<THREE.Group>(null);
 
   const isMovingFromStore = usePlayerStore((state) => state.isMoving);
   const currentAnimation = usePlayerStore((state) => state.currentAnimation);
+  const isSeated = usePlayerStore((state) => state.isSeated);
 
   // Use prop if provided (for remote players), otherwise use store (for local player)
   const isMoving = isWalking !== undefined ? isWalking : isMovingFromStore;
   const isRunningNow = isRunning !== undefined ? isRunning : currentAnimation === 'run';
+  const isSittingNow = isSitting !== undefined ? isSitting : isSeated;
 
   // Animation timing
   const animTime = useRef(0);
 
   useFrame((_, delta) => {
+    // Sitting animation - legs bent forward
+    if (isSittingNow) {
+      if (leftLegRef.current) leftLegRef.current.rotation.x = -Math.PI / 2;
+      if (rightLegRef.current) rightLegRef.current.rotation.x = -Math.PI / 2;
+      return;
+    }
+
     // Faster animation speed when running
     const animSpeed = isRunningNow ? 18 : 10;
     animTime.current += delta * animSpeed;

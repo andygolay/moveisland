@@ -50,6 +50,7 @@ function RemotePlayer({ player }: RemotePlayerProps) {
       <AvatarBody
         isWalking={player.animation === 'walk' || player.animation === 'run'}
         isRunning={player.animation === 'run'}
+        isSitting={player.animation === 'sitting'}
       />
 
       {/* NFT Billboard */}

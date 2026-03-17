@@ -14,6 +14,55 @@ export const CHESS_TABLE_POSITION = CHESS_TABLES[0];
 // How close player needs to be to interact
 export const CHESS_INTERACTION_RADIUS = 3;
 
+// Seat offset from table center (z-axis)
+export const SEAT_OFFSET = 1.2;
+
+// Get collision data for chess tables (table + seats)
+export function getChessTableCollisions(): { x: number; z: number; radius: number }[] {
+  const collisions: { x: number; z: number; radius: number }[] = [];
+
+  for (const table of CHESS_TABLES) {
+    // Main table pedestal/top - radius ~0.7 (table top is 1.4 wide)
+    collisions.push({ x: table.x, z: table.z, radius: 0.8 });
+
+    // Seat 1 (white side, -z) - radius ~0.4
+    collisions.push({ x: table.x, z: table.z - SEAT_OFFSET, radius: 0.4 });
+
+    // Seat 2 (black side, +z) - radius ~0.4
+    collisions.push({ x: table.x, z: table.z + SEAT_OFFSET, radius: 0.4 });
+  }
+
+  return collisions;
+}
+
+// Get the world position for a seat at a specific table
+// side: 'white' = seat 1 (closer to white pieces, -z), 'black' = seat 2 (closer to black pieces, +z)
+export function getSeatPosition(tableId: string, side: 'white' | 'black'): { x: number; y: number; z: number; rotation: number } | null {
+  const table = CHESS_TABLES.find(t => t.id === tableId);
+  if (!table) return null;
+
+  const groundY = getTerrainHeight(table.x, table.z);
+  const seatY = groundY + 0.4; // Seat height
+
+  if (side === 'white') {
+    // White sits at -z, facing +z (toward the board)
+    return {
+      x: table.x,
+      y: seatY,
+      z: table.z - SEAT_OFFSET,
+      rotation: 0, // Facing +z
+    };
+  } else {
+    // Black sits at +z, facing -z (toward the board)
+    return {
+      x: table.x,
+      y: seatY,
+      z: table.z + SEAT_OFFSET,
+      rotation: Math.PI, // Facing -z
+    };
+  }
+}
+
 interface ChessTableProps {
   position?: { x: number; z: number };
 }

@@ -423,10 +423,18 @@ function InstancedBushes({ bushes }: { bushes: BushInstance[] }) {
     const tempQuaternion = new THREE.Quaternion();
     const tempScale = new THREE.Vector3();
 
-    // Set instance colors
-    mainRef.current.instanceColor = new THREE.InstancedBufferAttribute(colorArray, 3);
-    secondary1Ref.current.instanceColor = new THREE.InstancedBufferAttribute(colorArray.slice(), 3);
-    flowerRef.current.instanceColor = new THREE.InstancedBufferAttribute(flowerColorArray, 3);
+    // Set instance colors with proper needsUpdate flag
+    const mainColorAttr = new THREE.InstancedBufferAttribute(colorArray, 3);
+    mainColorAttr.needsUpdate = true;
+    mainRef.current.instanceColor = mainColorAttr;
+
+    const secondaryColorAttr = new THREE.InstancedBufferAttribute(new Float32Array(colorArray), 3);
+    secondaryColorAttr.needsUpdate = true;
+    secondary1Ref.current.instanceColor = secondaryColorAttr;
+
+    const flowerColorAttr = new THREE.InstancedBufferAttribute(flowerColorArray, 3);
+    flowerColorAttr.needsUpdate = true;
+    flowerRef.current.instanceColor = flowerColorAttr;
 
     bushes.forEach((bush, i) => {
       const { x, z, terrainY, scale } = bush;
@@ -463,19 +471,19 @@ function InstancedBushes({ bushes }: { bushes: BushInstance[] }) {
       {/* Main bush body */}
       <instancedMesh ref={mainRef} args={[undefined, undefined, count]} castShadow>
         <dodecahedronGeometry args={[0.6, 1]} />
-        <meshStandardMaterial vertexColors roughness={0.85} flatShading />
+        <meshStandardMaterial color="#4A6741" roughness={0.85} flatShading />
       </instancedMesh>
 
       {/* Secondary lump */}
       <instancedMesh ref={secondary1Ref} args={[undefined, undefined, count]} castShadow>
         <dodecahedronGeometry args={[0.5, 1]} />
-        <meshStandardMaterial vertexColors roughness={0.85} flatShading />
+        <meshStandardMaterial color="#5D7A4A" roughness={0.85} flatShading />
       </instancedMesh>
 
       {/* Flowers */}
       <instancedMesh ref={flowerRef} args={[undefined, undefined, count]} castShadow>
         <sphereGeometry args={[0.5, 6, 6]} />
-        <meshStandardMaterial vertexColors roughness={0.6} />
+        <meshStandardMaterial color="#E8A3CA" roughness={0.6} />
       </instancedMesh>
     </group>
   );
