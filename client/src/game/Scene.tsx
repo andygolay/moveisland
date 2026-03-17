@@ -1,6 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { Sky, Environment } from '@react-three/drei';
-import { Suspense, Component, ReactNode, useState, useCallback } from 'react';
+import { Suspense, Component, useState, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import { World } from './World';
 import { Avatar } from './Avatar';
 import { CameraController } from './CameraController';

@@ -1,4 +1,5 @@
-import { useRef, useEffect, useMemo, useState, Component, ReactNode, useCallback } from 'react';
+import { useRef, useEffect, useMemo, useState, Component } from 'react';
+import type { ReactNode } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -415,11 +416,15 @@ export function NFTBillboard({
   }, [status]);
 
   // Timeout for slow image loads
+  // Use a ref to track current status to avoid stale closure issues
+  const statusRef = useRef(status);
+  statusRef.current = status;
+
   useEffect(() => {
     if (status === 'loaded') return;
 
     const timer = setTimeout(() => {
-      if (status !== 'loaded') {
+      if (statusRef.current !== 'loaded') {
         console.warn('[NFTBillboard] Load timeout for:', imageUrl);
         setTimedOut(true);
         setStatus('error');
