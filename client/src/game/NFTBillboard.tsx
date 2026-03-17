@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo, useState, Component, ReactNode } from 'react';
+import { useRef, useEffect, useMemo, useState, Component, ReactNode, useCallback } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -97,77 +97,116 @@ function isIpfsUrl(url: string): boolean {
   return url.startsWith('ipfs://') || url.includes('/ipfs/');
 }
 
-// Manual texture loader with error handling and IPFS gateway fallback
+// Load image using native HTMLImageElement (outside THREE.js to prevent uncaught errors)
+function loadImageSafely(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    const timeoutId = setTimeout(() => {
+      img.src = ''; // Cancel load
+      reject(new Error('Image load timeout'));
+    }, IMAGE_LOAD_TIMEOUT);
+
+    img.onload = () => {
+      clearTimeout(timeoutId);
+      resolve(img);
+    };
+
+    img.onerror = () => {
+      clearTimeout(timeoutId);
+      reject(new Error('Failed to load image'));
+    };
+
+    img.src = url;
+  });
+}
+
+// Try loading image from multiple IPFS gateways
+async function loadImageWithFallback(originalUrl: string): Promise<HTMLImageElement> {
+  const isIpfs = isIpfsUrl(originalUrl);
+
+  if (!isIpfs) {
+    // Non-IPFS URL, just try to load it directly
+    return loadImageSafely(originalUrl);
+  }
+
+  // Try each gateway in order
+  let lastError: Error = new Error('No gateways available');
+
+  for (let i = 0; i < IPFS_GATEWAYS.length; i++) {
+    const url = convertToGatewayUrl(originalUrl, i);
+    console.log(`[NFTBillboard] Trying gateway ${i + 1}/${IPFS_GATEWAYS.length}: ${url}`);
+
+    try {
+      const img = await loadImageSafely(url);
+      console.log(`[NFTBillboard] Successfully loaded from gateway ${i + 1}`);
+      return img;
+    } catch (err) {
+      console.warn(`[NFTBillboard] Gateway ${i + 1} failed:`, err);
+      lastError = err instanceof Error ? err : new Error('Unknown error');
+    }
+  }
+
+  throw lastError;
+}
+
+// Create THREE.Texture from already-loaded HTMLImageElement (safe, no network errors)
+function createTextureFromImage(img: HTMLImageElement): THREE.Texture {
+  const texture = new THREE.Texture(img);
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+// Safe texture loader - loads image first, then creates texture
 function useTextureWithFallback(
   originalUrl: string,
   onLoad?: () => void,
   onError?: (error: Error) => void
 ): THREE.Texture | null {
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
-  const [gatewayIndex, setGatewayIndex] = useState(0);
+
+  // Use refs for callbacks to avoid effect re-runs
+  const onLoadRef = useRef(onLoad);
+  const onErrorRef = useRef(onError);
+  onLoadRef.current = onLoad;
+  onErrorRef.current = onError;
 
   useEffect(() => {
     if (!originalUrl) return;
 
-    const isIpfs = isIpfsUrl(originalUrl);
-    const url = isIpfs ? convertToGatewayUrl(originalUrl, gatewayIndex) : originalUrl;
-
-    const loader = new THREE.TextureLoader();
-    loader.setCrossOrigin('anonymous');
-
     let cancelled = false;
 
-    console.log(`[NFTBillboard] Loading texture from: ${url}${isIpfs ? ` (gateway ${gatewayIndex + 1}/${IPFS_GATEWAYS.length})` : ''}`);
-
-    loader.load(
-      url,
-      (loadedTexture) => {
+    // Load image safely outside THREE.js, then create texture
+    loadImageWithFallback(originalUrl)
+      .then((img) => {
         if (cancelled) return;
+
         try {
-          loadedTexture.minFilter = THREE.LinearFilter;
-          loadedTexture.magFilter = THREE.LinearFilter;
-          loadedTexture.colorSpace = THREE.SRGBColorSpace;
-          loadedTexture.needsUpdate = true;
-          setTexture(loadedTexture);
-          console.log('[NFTBillboard] Texture loaded successfully');
-          onLoad?.();
+          const tex = createTextureFromImage(img);
+          setTexture(tex);
+          console.log('[NFTBillboard] Texture created successfully');
+          onLoadRef.current?.();
         } catch (e) {
-          console.warn('[NFTBillboard] Error processing texture:', e);
+          console.warn('[NFTBillboard] Error creating texture:', e);
           setTexture(null);
-          onError?.(new Error('Failed to process texture'));
+          onErrorRef.current?.(new Error('Failed to create texture'));
         }
-      },
-      undefined,
-      (err: unknown) => {
+      })
+      .catch((err) => {
         if (cancelled) return;
-
-        // Extract error message safely
-        let errorMessage = 'Failed to load texture';
-        if (err instanceof Error) {
-          errorMessage = err.message;
-        } else if (err && typeof err === 'object' && 'message' in err) {
-          errorMessage = String((err as { message: unknown }).message);
-        }
-
-        console.warn(`[NFTBillboard] Failed to load texture from gateway ${gatewayIndex + 1}:`, errorMessage);
-
-        // Try next gateway if this is an IPFS URL
-        if (isIpfs && gatewayIndex < IPFS_GATEWAYS.length - 1) {
-          console.log('[NFTBillboard] Trying next IPFS gateway...');
-          setGatewayIndex(i => i + 1);
-        } else {
-          // All gateways failed or not IPFS
-          console.warn('[NFTBillboard] All gateways failed, giving up');
-          setTexture(null);
-          onError?.(new Error(errorMessage));
-        }
-      }
-    );
+        console.warn('[NFTBillboard] All image load attempts failed:', err);
+        setTexture(null);
+        onErrorRef.current?.(err);
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [originalUrl, gatewayIndex, onLoad, onError]);
+  }, [originalUrl]);
 
   return texture;
 }
