@@ -12,13 +12,21 @@ interface RemotePlayerProps {
   player: OtherPlayer;
 }
 
+// Ground level for players (minimum Y position unless sitting)
+const GROUND_LEVEL = 0;
+
 function RemotePlayer({ player }: RemotePlayerProps) {
   const groupRef = useRef<THREE.Group>(null);
-  const targetPosition = useRef(new THREE.Vector3(player.x, player.y, player.z));
+
+  // Ensure Y is at ground level unless player is sitting
+  const isSitting = player.animation === 'sitting';
+  const safeY = isSitting ? player.y : Math.max(player.y, GROUND_LEVEL);
+
+  const targetPosition = useRef(new THREE.Vector3(player.x, safeY, player.z));
   const targetRotation = useRef(player.rotation);
 
   // Update target position when player data changes
-  targetPosition.current.set(player.x, player.y, player.z);
+  targetPosition.current.set(player.x, safeY, player.z);
   targetRotation.current = player.rotation;
 
   // Smoothly interpolate to target position
@@ -43,7 +51,7 @@ function RemotePlayer({ player }: RemotePlayerProps) {
   return (
     <group
       ref={groupRef}
-      position={[player.x, player.y, player.z]}
+      position={[player.x, safeY, player.z]}
       rotation={[0, player.rotation, 0]}
     >
       {/* Body with animation state */}

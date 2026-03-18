@@ -3,9 +3,7 @@ import { MOVEMENT_NETWORK } from './constants';
 
 // Create Movement client configured for mainnet
 export const movementConfig = new MovementConfig({
-  network: Network.CUSTOM,
-  fullnode: MOVEMENT_NETWORK.rpcUrl,
-  indexer: MOVEMENT_NETWORK.indexerUrl,
+  network: Network.MAINNET,
 });
 
 export const movement = new Movement(movementConfig);
