@@ -34,7 +34,7 @@ export function NFTSelector() {
         setOwnedNFTs(nfts);
 
         if (nfts.length === 0) {
-          setError('No supported NFTs found. You need a MoveLady or Moveously NFT to play.');
+          setError('No supported NFTs found. You need a Movement NFT to play.');
         }
       } catch (err) {
         console.error('Error loading NFTs:', err);
