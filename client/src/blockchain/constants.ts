@@ -1,5 +1,6 @@
-// Network selection: "testnet" or "mainnet" (default: mainnet)
-export const MOVEMENT_NETWORK_ENV = (import.meta.env.VITE_MOVEMENT_NETWORK || 'mainnet') as 'mainnet' | 'testnet';
+// Movement RPC URL from env var (defaults to mainnet)
+export const MOVEMENT_NODE_URL = import.meta.env.VITE_MOVEMENT_NODE_URL || 'https://mainnet.movementnetwork.xyz/v1';
+export const MOVEMENT_INDEXER_URL = import.meta.env.VITE_MOVEMENT_INDEXER_URL || 'https://indexer.mainnet.movementnetwork.xyz/v1/graphql';
 
 // Supported NFT collections for avatar selection
 export const SUPPORTED_COLLECTIONS = {

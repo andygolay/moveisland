@@ -1,9 +1,11 @@
 import { Movement, MovementConfig, Network } from '@moveindustries/ts-sdk';
-import { MOVEMENT_NETWORK_ENV } from './constants';
+import { MOVEMENT_NODE_URL, MOVEMENT_INDEXER_URL } from './constants';
 
-// Create Movement client - network determined by VITE_MOVEMENT_NETWORK env var
+// Create Movement client - use Network.CUSTOM to avoid SDK overriding URLs
 export const movementConfig = new MovementConfig({
-  network: MOVEMENT_NETWORK_ENV === 'testnet' ? Network.TESTNET : Network.MAINNET,
+  network: Network.CUSTOM,
+  fullnode: MOVEMENT_NODE_URL,
+  indexer: MOVEMENT_INDEXER_URL,
 });
 
 export const movement = new Movement(movementConfig);

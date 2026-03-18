@@ -1,5 +1,5 @@
-// Re-export network env from shared constants
-export { MOVEMENT_NETWORK_ENV } from '../../blockchain/constants';
+// Re-export network URLs from shared constants
+export { MOVEMENT_NODE_URL } from '../../blockchain/constants';
 
 // Chess contract address (from environment)
 export const CHESS_CONTRACT_ADDRESS = import.meta.env.VITE_CHESS_CONTRACT_ADDRESS || '';
