@@ -1,10 +1,5 @@
-// Movement blockchain constants
-export const MOVEMENT_NETWORK = {
-  name: 'Movement Mainnet',
-  rpcUrl: 'https://mainnet.movementnetwork.xyz/v1',
-  indexerUrl: 'https://indexer.mainnet.movementnetwork.xyz/v1/graphql',
-  chainId: 126,
-};
+// Network selection: "testnet" or "mainnet" (default: mainnet)
+export const MOVEMENT_NETWORK_ENV = (import.meta.env.VITE_MOVEMENT_NETWORK || 'mainnet') as 'mainnet' | 'testnet';
 
 // Supported NFT collections for avatar selection
 export const SUPPORTED_COLLECTIONS = {

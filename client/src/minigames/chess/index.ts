@@ -18,7 +18,7 @@ export { useChessGameStore } from './stores/chessGameStore';
 export type { Square } from './constants';
 export {
   CHESS_CONTRACT_ADDRESS,
-  MOVEMENT_NETWORK,
+  MOVEMENT_NETWORK_ENV,
   PIECE_NONE,
   PIECE_PAWN,
   PIECE_KNIGHT,

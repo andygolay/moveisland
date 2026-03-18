@@ -1,8 +1,8 @@
+// Re-export network env from shared constants
+export { MOVEMENT_NETWORK_ENV } from '../../blockchain/constants';
+
 // Chess contract address (from environment)
 export const CHESS_CONTRACT_ADDRESS = import.meta.env.VITE_CHESS_CONTRACT_ADDRESS || '';
-
-// Network selection: "testnet" or "mainnet" (default: mainnet)
-export const MOVEMENT_NETWORK = (import.meta.env.VITE_MOVEMENT_NETWORK || 'mainnet') as 'mainnet' | 'testnet';
 
 // Piece types (matching Move contract)
 export const PIECE_NONE = 0;

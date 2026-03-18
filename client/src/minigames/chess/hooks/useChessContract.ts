@@ -4,7 +4,7 @@ import { Movement, MovementConfig, Network } from '@moveindustries/ts-sdk';
 import type { Square } from '../constants';
 import {
   CHESS_CONTRACT_ADDRESS,
-  MOVEMENT_NETWORK,
+  MOVEMENT_NETWORK_ENV,
   CHALLENGE_STATUS_OPEN,
   CHALLENGE_STATUS_ACCEPTED,
   INITIAL_RATING,
@@ -46,7 +46,7 @@ export interface Challenge {
 
 // Create Movement client - network determined by VITE_MOVEMENT_NETWORK env var
 const movementConfig = new MovementConfig({
-  network: MOVEMENT_NETWORK === 'testnet' ? Network.TESTNET : Network.MAINNET,
+  network: MOVEMENT_NETWORK_ENV === 'testnet' ? Network.TESTNET : Network.MAINNET,
 });
 
 const movement = new Movement(movementConfig);

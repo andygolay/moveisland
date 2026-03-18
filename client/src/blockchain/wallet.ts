@@ -1,9 +1,9 @@
 import { Movement, MovementConfig, Network } from '@moveindustries/ts-sdk';
-import { MOVEMENT_NETWORK } from './constants';
+import { MOVEMENT_NETWORK_ENV } from './constants';
 
-// Create Movement client configured for mainnet
+// Create Movement client - network determined by VITE_MOVEMENT_NETWORK env var
 export const movementConfig = new MovementConfig({
-  network: Network.MAINNET,
+  network: MOVEMENT_NETWORK_ENV === 'testnet' ? Network.TESTNET : Network.MAINNET,
 });
 
 export const movement = new Movement(movementConfig);
