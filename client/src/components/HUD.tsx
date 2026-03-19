@@ -52,10 +52,13 @@ export function HUD() {
 
       {/* Bottom center - Controls hint */}
       <div className="hud-bottom-center">
-        <div className="controls-hint">
+        <div className="controls-hint controls-hint-keyboard">
           <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</span>
           <span><kbd>Space</kbd> Jump</span>
           <span><kbd>Mouse</kbd> Look around</span>
+        </div>
+        <div className="controls-hint controls-hint-touch">
+          <span>Tap &amp; hold to walk</span>
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
+import * as THREE from 'three';
 import { usePlayerStore } from '../stores/playerStore';
 import { getTerrainHeight, LOCATIONS } from './Terrain';
 import { getTreeCollisionData, getBushCollisionData } from './Buildings';
@@ -207,6 +208,16 @@ function checkChessTableCollision(
 // Input state
 const keys: Record<string, boolean> = {};
 
+// Touch movement state (module-level so it persists across renders)
+const touchState = {
+  active: false,
+  targetX: 0,
+  targetZ: 0,
+};
+
+// Detect touch device
+const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
 export function PlayerController() {
   const {
     position,
@@ -220,6 +231,10 @@ export function PlayerController() {
     setMoveDirection,
     setCurrentAnimation,
   } = usePlayerStore();
+
+  const { camera, gl } = useThree();
+  const raycaster = useMemo(() => new THREE.Raycaster(), []);
+  const groundPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
 
   // Cache collision data (computed once)
   const treeCollisionData = useMemo(() => getTreeCollisionData(), []);
@@ -299,6 +314,67 @@ export function PlayerController() {
     };
   }, [handleKeyDown, handleKeyUp, handleBlur]);
 
+  // Touch-to-move: raycast from touch point to ground plane to get world target
+  const screenToWorld = useCallback((clientX: number, clientY: number) => {
+    const rect = gl.domElement.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1
+    );
+    raycaster.setFromCamera(ndc, camera);
+    const intersection = new THREE.Vector3();
+    raycaster.ray.intersectPlane(groundPlane, intersection);
+    return intersection;
+  }, [gl, camera, raycaster, groundPlane]);
+
+  useEffect(() => {
+    if (!isTouchDevice()) return;
+
+    const canvas = gl.domElement;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      // Don't hijack touches on UI elements (buttons, modals, etc.)
+      if ((e.target as HTMLElement).closest?.('button, [role="button"], .hud, .modal, .ui-overlay')) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const worldPos = screenToWorld(touch.clientX, touch.clientY);
+      if (worldPos) {
+        touchState.active = true;
+        touchState.targetX = worldPos.x;
+        touchState.targetZ = worldPos.z;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!touchState.active) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const worldPos = screenToWorld(touch.clientX, touch.clientY);
+      if (worldPos) {
+        touchState.targetX = worldPos.x;
+        touchState.targetZ = worldPos.z;
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        touchState.active = false;
+      }
+    };
+
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd);
+    canvas.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      canvas.removeEventListener('touchstart', handleTouchStart);
+      canvas.removeEventListener('touchmove', handleTouchMove);
+      canvas.removeEventListener('touchend', handleTouchEnd);
+      canvas.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [gl, screenToWorld]);
+
   // Update movement each frame
   useFrame((_, delta) => {
     // Don't process movement if in chess view
@@ -326,20 +402,55 @@ export function PlayerController() {
     if (keys['KeyW'] || keys['ArrowUp']) moveForward = 1;    // Forward
     if (keys['KeyS'] || keys['ArrowDown']) moveForward = -1; // Backward
 
-    // Calculate world-space movement based on character's facing direction
-    // Positive moveForward = move in the direction the character is facing (away from camera)
-    const moveX = Math.sin(currentRotation) * moveForward;
-    const moveZ = Math.cos(currentRotation) * moveForward;
+    // Touch-to-move: override movement if touch is active and no keyboard input
+    let moveX: number;
+    let moveZ: number;
+    let isMovingNow: boolean;
+
+    const hasKeyboardInput = moveForward !== 0 || turning !== 0;
+
+    if (touchState.active && !hasKeyboardInput) {
+      // Calculate direction from player to touch target
+      const dx = touchState.targetX - position.x;
+      const dz = touchState.targetZ - position.z;
+      const distToTarget = Math.sqrt(dx * dx + dz * dz);
+
+      // Stop when close enough to target (arrival threshold)
+      if (distToTarget < 0.5) {
+        moveX = 0;
+        moveZ = 0;
+        isMovingNow = false;
+      } else {
+        // Normalize direction
+        moveX = dx / distToTarget;
+        moveZ = dz / distToTarget;
+        isMovingNow = true;
+
+        // Auto-rotate character to face movement direction
+        const targetRotation = Math.atan2(moveX, moveZ);
+        // Smooth rotation toward target
+        let rotDiff = targetRotation - currentRotation;
+        // Normalize to [-PI, PI]
+        while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
+        while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+        currentRotation += rotDiff * Math.min(1, TURN_SPEED * 2 * dt);
+        setRotation(currentRotation);
+      }
+    } else {
+      // Keyboard movement: calculate world-space movement based on character's facing direction
+      moveX = Math.sin(currentRotation) * moveForward;
+      moveZ = Math.cos(currentRotation) * moveForward;
+      isMovingNow = moveForward !== 0;
+    }
 
     // Update move direction in store
     setMoveDirection({ x: moveX, z: moveZ });
 
     // Calculate if moving
-    const isMovingNow = moveForward !== 0;
     setIsMoving(isMovingNow);
 
-    // Check if running (holding shift)
-    const isRunning = keys['ShiftLeft'] || keys['ShiftRight'];
+    // Touch always walks, keyboard can run with shift
+    const isRunning = hasKeyboardInput && (keys['ShiftLeft'] || keys['ShiftRight']);
     const currentSpeed = isRunning ? RUN_SPEED : WALK_SPEED;
 
     // Update animation

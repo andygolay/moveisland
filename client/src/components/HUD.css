@@ -83,8 +83,18 @@
   background: rgba(30, 95, 138, 0.9);
 }
 
+.hud-button:active {
+  background: rgba(30, 95, 138, 1);
+  transform: scale(0.95);
+}
+
 .hud-button.danger:hover {
   background: rgba(220, 53, 69, 0.9);
+}
+
+.hud-button.danger:active {
+  background: rgba(220, 53, 69, 1);
+  transform: scale(0.95);
 }
 
 /* Bottom Center - Controls */
@@ -175,12 +185,29 @@
   background: rgba(255, 255, 255, 0.35);
 }
 
+.hud-button.retry:active {
+  background: rgba(255, 255, 255, 0.5);
+  transform: scale(0.95);
+}
+
+/* Touch hint hidden on desktop, shown on mobile */
+.controls-hint-touch {
+  display: none;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
+  .controls-hint-keyboard {
+    display: none;
+  }
+
+  .controls-hint-touch {
+    display: flex;
+  }
+
   .controls-hint {
-    flex-direction: column;
     gap: 8px;
-    padding: 12px 16px;
+    padding: 10px 20px;
   }
 
   .player-info {
@@ -194,5 +221,20 @@
 
   .player-name {
     font-size: 14px;
+  }
+
+  .hud-top-left {
+    top: 12px;
+    left: 12px;
+  }
+
+  .hud-top-right {
+    top: 12px;
+    right: 12px;
+  }
+
+  .hud-bottom-left {
+    bottom: 12px;
+    left: 12px;
   }
 }
