@@ -72,6 +72,7 @@ export interface ChessState {
   player2: ChessPlayer | null;
   spectators: ChessSpectator[];
   gameId?: number; // On-chain game ID
+  challengeId?: number; // On-chain challenge ID (for joiner to accept)
 }
 
 export interface ChessJoinMessage {
@@ -104,11 +105,17 @@ export interface ChessSetGameIdMessage {
   gameId: number;
 }
 
+export interface ChessSetChallengeIdMessage {
+  type: 'chessSetChallengeId';
+  tableId: string;
+  challengeId: number;
+}
+
 export interface ChessStateMessage {
   type: 'chessState';
   tableId: string;
   state: ChessState;
 }
 
-export type ClientMessage = JoinMessage | PositionMessage | ChessJoinMessage | ChessLeaveMessage | ChessWatchMessage | ChessStopWatchingMessage | ChessSetGameIdMessage;
+export type ClientMessage = JoinMessage | PositionMessage | ChessJoinMessage | ChessLeaveMessage | ChessWatchMessage | ChessStopWatchingMessage | ChessSetGameIdMessage | ChessSetChallengeIdMessage;
 export type ServerMessage = PlayersMessage | PlayerJoinedMessage | PlayerLeftMessage | ErrorMessage | ChessStateMessage;

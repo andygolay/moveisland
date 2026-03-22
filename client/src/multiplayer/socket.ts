@@ -48,6 +48,7 @@ interface ChessStateMessage {
     player2: ChessPlayer | null;
     spectators: ChessSpectator[];
     gameId?: number;
+    challengeId?: number;
   };
 }
 
@@ -116,6 +117,7 @@ export function connectToServer(
             player2: data.state.player2,
             spectators: data.state.spectators || [],
             gameId: data.state.gameId,
+            challengeId: data.state.challengeId,
           });
           console.log('[Multiplayer] Chess state updated:', data.tableId, data.state.status, 'gameId:', data.state.gameId);
           break;
@@ -238,6 +240,17 @@ export function sendChessSetGameId(tableId: string, gameId: number) {
     type: 'chessSetGameId',
     tableId,
     gameId,
+  };
+  socket.send(JSON.stringify(msg));
+}
+
+export function sendChessSetChallengeId(tableId: string, challengeId: number) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+  const msg = {
+    type: 'chessSetChallengeId',
+    tableId,
+    challengeId,
   };
   socket.send(JSON.stringify(msg));
 }

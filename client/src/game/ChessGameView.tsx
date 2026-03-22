@@ -314,20 +314,28 @@ export function ChessGameOverlay() {
   // For players, show their color at bottom
   const effectivePlayerColor = isSpectating ? COLOR_WHITE : (playerColor || COLOR_WHITE);
 
+  // Identify which chessStore player is the local player by session ID
+  // (player1/player2 are ordered by who joined first, NOT by on-chain color)
+  const localSessionId = useMemo(() => sessionStorage.getItem('chess-session-id'), []);
+  const isLocalPlayer1 = player1?.odId === localSessionId;
+  const localChessPlayer = isLocalPlayer1 ? player1 : player2;
+  const remoteChessPlayer = isLocalPlayer1 ? player2 : player1;
+
   const opponentColor = effectivePlayerColor === COLOR_WHITE ? COLOR_BLACK : COLOR_WHITE;
   const opponentPlayer = effectivePlayerColor === COLOR_WHITE ? blackPlayer : whitePlayer;
   const opponentStats = effectivePlayerColor === COLOR_WHITE ? blackPlayerStats : whitePlayerStats;
   const myStats = effectivePlayerColor === COLOR_WHITE ? whitePlayerStats : blackPlayerStats;
   const myTimeMs = effectivePlayerColor === COLOR_WHITE ? whiteTimeMs : blackTimeMs;
   const opponentTimeMs = effectivePlayerColor === COLOR_WHITE ? blackTimeMs : whiteTimeMs;
-  const myNft = effectivePlayerColor === COLOR_WHITE ? player1?.nftImageUrl : player2?.nftImageUrl;
-  const opponentNft = effectivePlayerColor === COLOR_WHITE ? player2?.nftImageUrl : player1?.nftImageUrl;
+  // Use session-based player matching for display names/NFTs (not color-based)
+  const myNft = isSpectating ? player1?.nftImageUrl : localChessPlayer?.nftImageUrl;
+  const opponentNft = isSpectating ? player2?.nftImageUrl : remoteChessPlayer?.nftImageUrl;
   const myDisplayName = isSpectating
     ? player1?.displayName || formatAddress(whitePlayer || '')
-    : (effectivePlayerColor === COLOR_WHITE ? player1?.displayName : player2?.displayName);
+    : localChessPlayer?.displayName;
   const opponentDisplayName = isSpectating
     ? player2?.displayName || formatAddress(blackPlayer || '')
-    : (effectivePlayerColor === COLOR_WHITE ? player2?.displayName : player1?.displayName);
+    : remoteChessPlayer?.displayName;
 
   // Styles
   const containerStyle: React.CSSProperties = {

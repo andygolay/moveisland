@@ -10,6 +10,7 @@ import type {
   ChessWatchMessage,
   ChessStopWatchingMessage,
   ChessSetGameIdMessage,
+  ChessSetChallengeIdMessage,
   ChessState,
   ChessPlayer,
   ChessSpectator,
@@ -130,6 +131,9 @@ export default class MoveIslandServer implements Party.Server {
           break;
         case "chessSetGameId":
           this.handleChessSetGameId(sender, data);
+          break;
+        case "chessSetChallengeId":
+          this.handleChessSetChallengeId(sender, data);
           break;
       }
     } catch (error) {
@@ -255,7 +259,8 @@ export default class MoveIslandServer implements Party.Server {
       } else {
         chessState.player1 = null;
         chessState.status = 'empty';
-        chessState.gameId = undefined; // Clear game ID when table is empty
+        chessState.gameId = undefined;
+              chessState.challengeId = undefined;
       }
     } else if (chessState.player2?.odId === odId) {
       chessState.player2 = null;
@@ -306,6 +311,16 @@ export default class MoveIslandServer implements Party.Server {
     this.broadcastChessState(tableId);
   }
 
+  private handleChessSetChallengeId(conn: Party.Connection, data: ChessSetChallengeIdMessage) {
+    const { tableId, challengeId } = data;
+    const chessState = this.chessTables.get(tableId);
+    if (!chessState) return;
+
+    chessState.challengeId = challengeId;
+    console.log(`Chess: Challenge ID set to ${challengeId} for table ${tableId}`);
+    this.broadcastChessState(tableId);
+  }
+
   private broadcastChessState(tableId: string) {
     const chessState = this.chessTables.get(tableId);
     if (!chessState) return;
@@ -349,7 +364,8 @@ export default class MoveIslandServer implements Party.Server {
             } else {
               chessState.player1 = null;
               chessState.status = 'empty';
-              chessState.gameId = undefined; // Clear game ID when table is empty
+              chessState.gameId = undefined;
+              chessState.challengeId = undefined;
             }
             changed = true;
             console.log(`Chess: Player 1 left (${chessOdId}) from ${chessTableId}, status now: ${chessState.status}`);

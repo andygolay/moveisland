@@ -21,6 +21,7 @@ export interface ChessTableState {
   player2: ChessPlayer | null;
   spectators: ChessSpectator[];
   gameId?: number;
+  challengeId?: number;
 }
 
 interface ChessState {
@@ -39,6 +40,10 @@ interface ChessState {
   // On-chain game ID (from server, for spectators)
   serverGameId: number | null;
   setServerGameId: (gameId: number | null) => void;
+
+  // On-chain challenge ID (from server, for joiner to accept)
+  serverChallengeId: number | null;
+  setServerChallengeId: (challengeId: number | null) => void;
 
   // Players in the game
   player1: ChessPlayer | null;
@@ -99,6 +104,7 @@ export const useChessStore = create<ChessState>((set, get) => ({
         player2: state.player2,
         spectators: state.spectators,
         serverGameId: state.gameId ?? null,
+        serverChallengeId: state.challengeId ?? null,
       });
     } else {
       set({ tableStates: newMap });
@@ -121,6 +127,7 @@ export const useChessStore = create<ChessState>((set, get) => ({
           player2: tableState.player2,
           spectators: tableState.spectators,
           serverGameId: tableState.gameId ?? null,
+          serverChallengeId: tableState.challengeId ?? null,
         });
       } else {
         // No state yet for this table, set to empty
@@ -131,6 +138,7 @@ export const useChessStore = create<ChessState>((set, get) => ({
           player2: null,
           spectators: [],
           serverGameId: null,
+          serverChallengeId: null,
         });
       }
     } else {
@@ -145,6 +153,10 @@ export const useChessStore = create<ChessState>((set, get) => ({
   // Server game ID
   serverGameId: null,
   setServerGameId: (gameId) => set({ serverGameId: gameId }),
+
+  // Server challenge ID
+  serverChallengeId: null,
+  setServerChallengeId: (challengeId) => set({ serverChallengeId: challengeId }),
 
   // Players
   player1: null,
@@ -244,6 +256,7 @@ export const useChessStore = create<ChessState>((set, get) => ({
     player2: null,
     spectators: [],
     serverGameId: null,
+    serverChallengeId: null,
     isInChessView: false,
     isSpectating: false,
     localPlayerSide: null,

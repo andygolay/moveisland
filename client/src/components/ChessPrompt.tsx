@@ -1,12 +1,13 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useChessStore } from '../stores/chessStore';
 import { useGameStore } from '../stores/gameStore';
-import { sendChessJoin, sendChessLeave, sendChessWatch, sendChessSetGameId } from '../multiplayer/socket';
+import { sendChessJoin, sendChessLeave, sendChessWatch, sendChessSetGameId, sendChessSetChallengeId } from '../multiplayer/socket';
 import {
   TimeControlSelector,
   useChessContract,
   useChessGameStore,
   CHALLENGE_STATUS_ACCEPTED,
+  COLOR_WHITE,
 } from '../minigames/chess';
 
 type PromptState =
@@ -29,6 +30,7 @@ export function ChessPrompt() {
     setIsInChessView,
     setLocalPlayerSide,
     setIsSpectating,
+    serverChallengeId,
   } = useChessStore();
   const { walletAddress, displayName, selectedNFT } = useGameStore();
   const chessContract = useChessContract();
@@ -75,20 +77,25 @@ export function ChessPrompt() {
         if (gameId > 0) {
           gameStore.setGameId(gameId);
           gameStore.setChallengeId(challengeId);
-          setLocalPlayerSide('white');
-          setIsInChessView(true);
-          setPromptState('idle');
 
           // Broadcast gameId to server for spectators
           if (activeTableId) {
             sendChessSetGameId(activeTableId, gameId);
           }
 
-          // Fetch initial game state
+          // Fetch initial game state and determine actual side from on-chain
           const state = await chessContract.getGameState(gameId);
           if (state && chessContract.address) {
             gameStore.updateFromGameState(state, chessContract.address);
+            // Set side based on actual on-chain assignment (contract may assign randomly)
+            const isWhite = state.white_player.toLowerCase() === chessContract.address.toLowerCase();
+            setLocalPlayerSide(isWhite ? 'white' : 'black');
+          } else {
+            setLocalPlayerSide('white');
           }
+
+          setIsInChessView(true);
+          setPromptState('idle');
         }
       }
     };
@@ -165,6 +172,11 @@ export function ChessPrompt() {
       setChallengeId(myChallenge.challenge_id);
       gameStore.setChallengeId(myChallenge.challenge_id);
       gameStore.setPendingChallenge(myChallenge);
+
+      // Share challenge ID via server so joiner can accept the exact challenge
+      if (activeTableId) {
+        sendChessSetChallengeId(activeTableId, myChallenge.challenge_id);
+      }
     }
 
     // Join the local game state
@@ -209,21 +221,26 @@ export function ChessPrompt() {
       gameStore.setIsRegistered(true);
     }
 
-    // Find the challenge to accept
-    const challenges = await chessContract.getOpenChallenges();
-    // Find challenge from player1 (who's waiting)
-    const challengeToAccept = challenges.find(
-      c => player1 && c.challenger.toLowerCase() !== chessContract.address?.toLowerCase()
-    );
+    // Find the challenge to accept — prefer server-shared challenge ID for reliability
+    let challengeIdToAccept: number | null = serverChallengeId;
 
-    if (!challengeToAccept) {
-      setError('No challenge found to accept');
+    if (!challengeIdToAccept) {
+      // Fallback: search open challenges
+      const challenges = await chessContract.getOpenChallenges();
+      const challengeToAccept = challenges.find(
+        c => c.challenger.toLowerCase() !== chessContract.address?.toLowerCase()
+      );
+      challengeIdToAccept = challengeToAccept?.challenge_id ?? null;
+    }
+
+    if (!challengeIdToAccept) {
+      setError('No challenge found to accept. The other player may still be creating the game.');
       setPromptState('idle');
       return;
     }
 
     // Accept the challenge
-    const success = await chessContract.acceptChallenge(challengeToAccept.challenge_id);
+    const success = await chessContract.acceptChallenge(challengeIdToAccept);
     if (!success) {
       setError('Failed to accept challenge. Please try again.');
       setPromptState('idle');
@@ -231,7 +248,7 @@ export function ChessPrompt() {
     }
 
     // Poll for game ID
-    const gameId = await chessContract.pollForGameId(challengeToAccept.challenge_id);
+    const gameId = await chessContract.pollForGameId(challengeIdToAccept);
 
     if (gameId > 0) {
       // Join local game state
@@ -249,15 +266,20 @@ export function ChessPrompt() {
       }
 
       gameStore.setGameId(gameId);
-      gameStore.setChallengeId(challengeToAccept.challenge_id);
-      setLocalPlayerSide('black');
-      setIsInChessView(true);
+      gameStore.setChallengeId(challengeIdToAccept);
 
-      // Fetch initial game state
+      // Fetch initial game state and determine actual side from on-chain
       const state = await chessContract.getGameState(gameId);
       if (state && chessContract.address) {
         gameStore.updateFromGameState(state, chessContract.address);
+        // Set side based on actual on-chain assignment (contract may assign randomly)
+        const isWhite = state.white_player.toLowerCase() === chessContract.address.toLowerCase();
+        setLocalPlayerSide(isWhite ? 'white' : 'black');
+      } else {
+        setLocalPlayerSide('black');
       }
+
+      setIsInChessView(true);
     } else {
       setError('Game not found. Please try again.');
     }

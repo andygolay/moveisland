@@ -351,7 +351,7 @@ export function useChessContract() {
     if (!connected || !moduleAddress) return false;
 
     try {
-      await signAndSubmitTransaction({
+      const response = await signAndSubmitTransaction({
         data: {
           function: `${moduleAddress}::chess_lobby::create_open_challenge`,
           typeArguments: [],
@@ -365,6 +365,16 @@ export function useChessContract() {
           ],
         },
       });
+
+      // Wait for transaction to be confirmed on-chain before querying challenges
+      if (response?.hash) {
+        console.log('[Chess] Waiting for create_challenge tx:', response.hash);
+        await movement.transaction.waitForTransaction({
+          transactionHash: response.hash,
+        });
+        console.log('[Chess] create_challenge tx confirmed');
+      }
+
       return true;
     } catch (err) {
       console.error('[Chess] Failed to create challenge:', err);
