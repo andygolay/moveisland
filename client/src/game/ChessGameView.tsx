@@ -306,6 +306,11 @@ export function ChessGameOverlay() {
     resetGameStore();
   };
 
+  // Identify which chessStore player is the local player by session ID
+  // (player1/player2 are ordered by who joined first, NOT by on-chain color)
+  // Must be before the early return to satisfy React's rules of hooks
+  const localSessionId = useMemo(() => sessionStorage.getItem('chess-session-id'), []);
+
   if (!isInChessView) return null;
 
   const gameIsOver = isGameOver(status);
@@ -314,9 +319,6 @@ export function ChessGameOverlay() {
   // For players, show their color at bottom
   const effectivePlayerColor = isSpectating ? COLOR_WHITE : (playerColor || COLOR_WHITE);
 
-  // Identify which chessStore player is the local player by session ID
-  // (player1/player2 are ordered by who joined first, NOT by on-chain color)
-  const localSessionId = useMemo(() => sessionStorage.getItem('chess-session-id'), []);
   const isLocalPlayer1 = player1?.odId === localSessionId;
   const localChessPlayer = isLocalPlayer1 ? player1 : player2;
   const remoteChessPlayer = isLocalPlayer1 ? player2 : player1;
