@@ -7,7 +7,6 @@ import {
   useChessContract,
   useChessGameStore,
   CHALLENGE_STATUS_ACCEPTED,
-  COLOR_WHITE,
 } from '../minigames/chess';
 
 type PromptState =
